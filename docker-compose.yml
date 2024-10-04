@@ -1,0 +1,28 @@
+version: '3'
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - "8000:8000"
+        volumes:
+            - .:/var/www/html
+        depends_on:
+            - db
+        environment:
+            - DB_HOST=db
+            - DB_DATABASE=laravel
+            - DB_USERNAME=root
+            - DB_PASSWORD=your_mysql_root_password
+
+    db:
+        image: mysql:5.7
+        environment:
+            MYSQL_DATABASE: laravel
+            MYSQL_ROOT_PASSWORD: your_mysql_root_password
+        volumes:
+            - dbdata:/var/lib/mysql
+
+volumes:
+    dbdata:
