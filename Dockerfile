@@ -23,14 +23,26 @@ RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy codebase
-COPY . /var/www/html
-
 # Set working directory
 WORKDIR /var/www/html
 
+# Copy codebase
+COPY . .
+
 # Install Composer dependencies
-RUN composer install
+RUN composer install --no-interaction --no-dev --prefer-dist
+
+# Generate Application Key
+RUN php artisan key:generate
+
+# Run Migrations
+RUN php artisan migrate --force
+
+# Optimize Application
+RUN php artisan optimize
+
+# Change owner
+RUN chown -R www-data:www-data storage bootstrap/cache
 
 # Expose port 8000 and start Laravel development server
 EXPOSE 8000
