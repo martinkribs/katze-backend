@@ -59,5 +59,7 @@ jobs:
           echo "$KUBECONFIG_FILE" | base64 --decode > kubeconfig.yaml
           kubectl --kubeconfig=kubeconfig.yaml set image deployment/katze-backend katze-backend=$IMAGE_TAG
           kubectl --kubeconfig=kubeconfig.yaml rollout status deployment/katze-backend
-          kubectl --kubeconfig=kubeconfig.yaml apply -f migrate-job.yaml
-          kubectl --kubeconfig=kubeconfig.yaml apply -f key-generate-job.yaml
+
+          # Führe das Skript direkt im Pod aus
+          POD_NAME=$(kubectl --kubeconfig=kubeconfig.yaml get pods -l app=katze-backend -o jsonpath="{.items[0].metadata.name}")
+          kubectl --kubeconfig=kubeconfig.yaml exec $POD_NAME -- /bin/bash /var/www/html/start.sh
