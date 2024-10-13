@@ -57,7 +57,7 @@ jobs:
           IMAGE_TAG: ghcr.io/${{ github.repository }}/katze-backend:${{ github.sha }}
         run: |
           echo "$KUBECONFIG_FILE" | base64 --decode > kubeconfig.yaml
-
           kubectl --kubeconfig=kubeconfig.yaml set image deployment/katze-backend katze-backend=$IMAGE_TAG
           kubectl --kubeconfig=kubeconfig.yaml rollout status deployment/katze-backend
-          kubectl --kubeconfig=kubeconfig.yaml create job --from=deployment/katze-backend laravel-migrate-${{ github.sha }} -- php artisan migrate --force
+          kubectl --kubeconfig=kubeconfig.yaml apply -f migrate-job.yaml
+          kubectl --kubeconfig=kubeconfig.yaml apply -f key-generate-job.yaml
