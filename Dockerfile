@@ -35,15 +35,12 @@ RUN composer install --no-interaction --no-dev --prefer-dist
 # Generate Application Key
 RUN php artisan key:generate
 
-# Run Migrations
-RUN php artisan migrate --force
-
 # Optimize Application
 RUN php artisan optimize
 
 # Change owner
-RUN chown -R www-data:www-data storage bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html
 
-# Expose port 8000 and start Laravel development server
-EXPOSE 8000
-CMD php artisan serve --host=0.0.0.0 --port=8000
+# Expose port 9000 and start php-fpm server
+EXPOSE 9000
+CMD ["php-fpm"]

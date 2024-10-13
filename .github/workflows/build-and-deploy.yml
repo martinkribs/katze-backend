@@ -1,0 +1,40 @@
+name: Build and Deploy
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Laravel Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}/katze-backend:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update Kubernetes resources
+        env:
+          KUBECONFIG_FILE: ${{ secrets.KUBECONFIG }}
+          IMAGE_TAG: ghcr.io/${{ github.repository }}/katze-backend:${{ github.sha }}
+        run: |
+          echo "$KUBECONFIG_FILE" > kubeconfig.yaml
+          kubectl --kubeconfig=kubeconfig.yaml set image deployment/katze-backend katze-backend=$IMAGE_TAG
+          kubectl --kubeconfig=kubeconfig.yaml rollout status deployment/katze-backend
+          kubectl --kubeconfig=kubeconfig.yaml create job --from=deployment/katze-backend laravel-migrate-${{ github.sha }} -- php artisan migrate --force
