@@ -32,9 +32,6 @@ COPY . .
 # Install Composer dependencies
 RUN composer install --no-interaction --no-dev --prefer-dist
 
-# Generate Application Key
-RUN php artisan key:generate
-
 # Optimize Application
 RUN php artisan optimize
 
