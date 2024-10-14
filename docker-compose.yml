@@ -4,7 +4,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: docker/development/Dockerfile
+      dockerfile: docker/Dockerfile
     container_name: katze-backend
     restart: unless-stopped
     depends_on:

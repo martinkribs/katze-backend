@@ -19,7 +19,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Install laravel via composer
 RUN cd /var/www/ && composer create-project --prefer-dist laravel/laravel laravel
 COPY laravel/* /var/www/laravel/
-COPY environment/production/* /var/www/laravel/
+COPY environment/* /var/www/laravel/
 
 # Remove the default Nginx index page
 RUN rm -rf /var/www/html
