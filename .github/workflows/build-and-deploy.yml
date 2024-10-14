@@ -10,26 +10,8 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Create .env file from .env.example
-        run: |
-          cp .env.example .env
-          sed -i 's/APP_NAME=Laravel/APP_NAME=Katze/' .env
-          sed -i 's/APP_ENV=local/APP_ENV=production/' .env
-          sed -i "s#APP_KEY=#APP_KEY=${{ secrets.APP_KEY }}#" .env
-          sed -i 's/APP_DEBUG=true/APP_DEBUG=false/' .env
-          sed -i 's#APP_URL=http://localhost#APP_URL=https://katze.app#' .env
-          sed -i 's/DB_HOST=127.0.0.1/DB_HOST=mysql/' .env
-          sed -i 's/DB_DATABASE=laravel/DB_DATABASE=katze/' .env
-          sed -i "s/DB_USERNAME=root/DB_USERNAME=${{ secrets.DB_USERNAME }}/" .env
-          sed -i "s/DB_PASSWORD=/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/" .env
-          sed -i "s/MAIL_HOST=mailhog/MAIL_HOST=${{ secrets.MAIL_HOST }}/" .env
-          sed -i "s/MAIL_USERNAME=null/MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}/" .env
-          sed -i "s/MAIL_PASSWORD=null/MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}/" .env
-          sed -i 's/MAIL_ENCRYPTION=null/MAIL_ENCRYPTION=tls/' .env
-          sed -i 's/MAIL_FROM_ADDRESS="hello@example.com"/MAIL_FROM_ADDRESS="noreply@katze.app"/' .env
-          sed -i 's/MAIL_FROM_NAME="${APP_NAME}"/MAIL_FROM_NAME="Katze App"/' .env
+      - name: 'Checkout GitHub Action' 
+        uses: actions/checkout@v4
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
