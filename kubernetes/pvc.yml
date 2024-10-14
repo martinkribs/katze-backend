@@ -1,0 +1,58 @@
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: mysql-azurefile
+  namespace: katze-backend
+kind: StorageClass
+mountOptions:
+  - dir_mode=0777
+  - file_mode=0777
+  - uid=999
+  - gid=999
+  - mfsymlinks
+  - nobrl
+  - cache=strict
+  - nosharesock
+parameters:
+  skuName: Standard_LRS
+provisioner: file.csi.azure.com
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: katze-backend
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: mysql-azurefile
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: meilisearch-pvc
+  namespace: katze-backend
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: azurefile-csi
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-pvc
+  namespace: katze-backend
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: azurefile-csi
+  resources:
+    requests:
+      storage: 1Gi

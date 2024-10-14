@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build & Push Docker Image for Production
 on:
   push:
     branches: [ main ]
@@ -6,6 +6,9 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: '.'
     permissions:
       contents: read
       packages: write
@@ -25,22 +28,3 @@ jobs:
           chmod +x ./docker/startup_script.sh
           docker build -f docker/Dockerfile --tag ghcr.io/martinkribs/katze-backend:${GITHUB_REF##*/} .
           docker push ghcr.io/martinkribs/katze-backend:${GITHUB_REF##*/}
-
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Update Kubernetes resources
-        env:
-          KUBECONFIG_FILE: ${{ secrets.KUBECONFIG }}
-          IMAGE_TAG: ghcr.io/${{ github.repository }}/katze-backend:${GITHUB_REF##*/}
-        run: |
-          echo "$KUBECONFIG_FILE" | base64 --decode > kubeconfig.yaml
-          kubectl --kubeconfig=kubeconfig.yaml set image deployment/katze-backend katze-backend=$IMAGE_TAG
-          kubectl --kubeconfig=kubeconfig.yaml rollout status deployment/katze-backend
-
-          # Führe das Skript direkt im Pod aus
-          POD_NAME=$(kubectl --kubeconfig=kubeconfig.yaml get pods -l app=katze-backend -o jsonpath="{.items[0].metadata.name}")
-          kubectl --kubeconfig=kubeconfig.yaml exec $POD_NAME -- /bin/bash /var/www/html/start.sh

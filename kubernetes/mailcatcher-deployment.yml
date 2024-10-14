@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailcatcher
+  namespace: katze-backend
+  labels:
+    app: mailcatcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailcatcher
+  template:
+    metadata:
+      labels:
+        app: mailcatcher
+    spec:
+      containers:
+        - name: mailcatcher
+          image: schickling/mailcatcher:latest
+          ports:
+            - containerPort: 1025
+              name: smtp
+            - containerPort: 1080
+              name: web
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailcatcher
+  namespace: katze-backend
+spec:
+  selector:
+    app: mailcatcher
+  ports:
+    - protocol: TCP
+      port: 1025
+      name: smtp
+      targetPort: 1025
+    - protocol: TCP
+      port: 1080
+      name: web
+      targetPort: 1080

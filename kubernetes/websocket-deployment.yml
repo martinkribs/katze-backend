@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: websocket
+  namespace: katze-backend
+  labels:
+    app: websocket
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: websocket
+  template:
+    metadata:
+      labels:
+        app: websocket
+    spec:
+      containers:
+        - name: websocket
+          image: quay.io/soketi/soketi:latest
+          ports:
+            - containerPort: 6001
+              name: websocket
+            - containerPort: 9601
+              name: websocket-2
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "250m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: websocket
+  namespace: katze-backend
+spec:
+  selector:
+    app: websocket
+  ports:
+    - protocol: TCP
+      port: 6001
+      name: websocket
+      targetPort: 6001
+    - protocol: TCP
+      port: 9601
+      name: websocket-2
+      targetPort: 9601
