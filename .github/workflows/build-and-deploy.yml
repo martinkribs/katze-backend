@@ -20,12 +20,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Laravel Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository }}/katze-backend:${{ github.sha }}
+      - name: 'Build & push image'
+        run: |
+          chmod +x ./docker/startup_script.sh
+          docker build -f docker/Dockerfile --tag ghcr.io/martinkribs/katze-backend:${GITHUB_REF##*/} .
+          docker push ghcr.io/martinkribs/katze-backend:${GITHUB_REF##*/}
 
   deploy:
     needs: build-and-push
@@ -36,7 +35,7 @@ jobs:
       - name: Update Kubernetes resources
         env:
           KUBECONFIG_FILE: ${{ secrets.KUBECONFIG }}
-          IMAGE_TAG: ghcr.io/${{ github.repository }}/katze-backend:${{ github.sha }}
+          IMAGE_TAG: ghcr.io/${{ github.repository }}/katze-backend:${GITHUB_REF##*/}
         run: |
           echo "$KUBECONFIG_FILE" | base64 --decode > kubeconfig.yaml
           kubectl --kubeconfig=kubeconfig.yaml set image deployment/katze-backend katze-backend=$IMAGE_TAG
