@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: katze-backend
-          image: ghcr.io/martinkribs/katze-backend:debug
+          image: ghcr.io/martinkribs/katze-backend:latest
           imagePullPolicy: Always
           workingDir: /var/www/laravel
           ports:
@@ -56,14 +56,8 @@ spec:
               value: "redis"
             - name: SESSION_DRIVER
               value: "redis"
-            - name: MAIL_MAILER
-              value: "smtp"
-            - name: MAIL_HOST
-              value: "mailcatcher"
-            - name: MAIL_PORT
-              value: "1025"
             - name: MEILISEARCH_HOST
-              value: "http://meilisearch.katze.app:7700"
+              value: "https://meilisearch.katze.app:7700"
             - name: MEILISEARCH_KEY
               value: "katze-meilisearch"
             - name: APP_ENV

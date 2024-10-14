@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soketi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: soketi
+  template:
+    metadata:
+      labels:
+        app: soketi
+    spec:
+      containers:
+        - name: soketi
+          image: quay.io/soketi/soketi:latest
+          ports:
+            - containerPort: 6001
+          env:
+            - name: SOKETI_DEBUG
+              value: "1"
+            - name: SOKETI_DEFAULT_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: soketi-app-id
+                  key: password
+            - name: SOKETI_DEFAULT_APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: soketi-app-key
+                  key: password
+            - name: SOKETI_DEFAULT_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: soketi-app-secret
+                  key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: soketi
+spec:
+  selector:
+    app: soketi
+  ports:
+    - port: 6001
+      targetPort: 6001

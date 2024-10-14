@@ -28,7 +28,10 @@ spec:
             - name: MYSQL_DATABASE
               value: "katze"
             - name: MYSQL_ROOT_PASSWORD
-              value: "root"
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: password
           resources:
             limits:
               memory: "512Mi"
