@@ -45,7 +45,10 @@ spec:
             - name: DB_USERNAME
               value: "root"
             - name: DB_PASSWORD
-              value: "root"
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: password
             - name: REDIS_HOST
               value: "redis"
             - name: REDIS_PORT
