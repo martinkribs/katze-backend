@@ -62,7 +62,10 @@ spec:
             - name: MEILISEARCH_HOST
               value: "https://meilisearch.katze.app:7700"
             - name: MEILISEARCH_KEY
-              value: "katze-meilisearch"
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MEILISEARCH_KEY
             - name: APP_ENV
               value: "local"
           volumeMounts:
@@ -93,6 +96,18 @@ spec:
             - name: app-storage
               mountPath: /var/www/laravel/bootstrap
               subPath: laravel/bootstrap
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+              httpGet:
+                path: /health
+                port: 9000
+              initialDelaySeconds: 15
+              periodSeconds: 20
       imagePullSecrets:
         - name: dockerconfigjson-github-com
       volumes:

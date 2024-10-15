@@ -30,6 +30,12 @@ spec:
           volumeMounts:
             - name: meilisearch-storage
               mountPath: /data.ms
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 10
+            periodSeconds: 10
       volumes:
         - name: meilisearch-storage
           persistentVolumeClaim:

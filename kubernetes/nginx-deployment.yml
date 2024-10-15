@@ -33,10 +33,16 @@ spec:
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d
+            - name: app-public
+              mountPath: /var/www/laravel/public
+              subPath: laravel/public
       volumes:
         - name: nginx-config
           configMap:
             name: nginx-config
+        - name: app-public
+          persistentVolumeClaim:
+            claimName: app-pvc
 ---
 apiVersion: v1
 kind: Service

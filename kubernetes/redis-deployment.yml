@@ -28,6 +28,11 @@ spec:
             requests:
               memory: "256Mi"
               cpu: "250m"
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
