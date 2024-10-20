@@ -45,19 +45,6 @@ services:
     ports:
       - "22:22"
 
-  swagger-ui:
-    image: swaggerapi/swagger-ui
-    container_name: swagger-ui
-    environment:
-      API_URL: http://localhost:80/openapi.yaml
-    ports:
-      - "8001:8080"
-    restart: unless-stopped
-    networks:
-      - app-network
-    depends_on:
-      - app
-
   # Nginx Service
   nginx:
     image: nginx:stable-alpine
@@ -138,6 +125,7 @@ services:
       - "9601:9601"
     networks:
       - app-network
+
 volumes:
   mysql:
 

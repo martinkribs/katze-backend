@@ -1,0 +1,73 @@
+services:
+
+  # MySQL Service
+  mysql:
+    image: mysql:8
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: katze
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - mysql:/var/lib/mysql
+    networks:
+      - app-network
+
+  # Redis Service
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  # MeiliSearch Service
+  meilisearch:
+    image: getmeili/meilisearch:latest
+    container_name: meilisearch
+    restart: unless-stopped
+    ports:
+      - "7700:7700"
+    volumes:
+      - ./data.ms:/data.ms
+    networks:
+      - app-network
+
+  # MailCatcher Service
+  mailcatcher:
+    image: schickling/mailcatcher:latest
+    container_name: mailcatcher
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "1025:1025" # SMTP
+      - "1080:1080" # Web Interface
+    networks:
+      - app-network
+
+  # WebSocket Service
+  websocket:
+    image: quay.io/soketi/soketi:latest
+    container_name: websocket
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "6001:6001"
+      - "9601:9601"
+    networks:
+      - app-network
+
+volumes:
+  mysql:
+
+networks:
+  app-network:
+    driver: bridge
