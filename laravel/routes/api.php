@@ -22,7 +22,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/auth/logout', [AuthenticatedSessionController::class, 'destroy']);
     Route::get('/auth/verify-email/{id}/{hash}', VerifyEmailController::class)
-        ->middleware(['signed', 'throttle:6,1']);
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
     Route::post('/auth/email/verification-notification',
         [EmailVerificationNotificationController::class, 'store'])
         ->middleware('throttle:6,1');
