@@ -162,8 +162,6 @@
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/nikic/php-parser" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/nunomaduro/collision" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/nunomaduro/termwind" />
-      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/paragonie/random_compat" />
-      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/paragonie/sodium_compat" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/phar-io/manifest" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/phar-io/version" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/phpoption/phpoption" />
@@ -183,7 +181,6 @@
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/psr/log" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/psr/simple-cache" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/psy/psysh" />
-      <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/pusher/pusher-php-server" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/ralouphie/getallheaders" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/ramsey/collection" />
       <excludeFolder url="file://$MODULE_DIR$/laravel/vendor/ramsey/uuid" />

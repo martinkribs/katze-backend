@@ -154,7 +154,6 @@
       <path value="$PROJECT_DIR$/laravel/vendor/league/flysystem-local" />
       <path value="$PROJECT_DIR$/laravel/vendor/league/mime-type-detection" />
       <path value="$PROJECT_DIR$/laravel/vendor/nesbot/carbon" />
-      <path value="$PROJECT_DIR$/laravel/vendor/pusher/pusher-php-server" />
       <path value="$PROJECT_DIR$/laravel/vendor/ramsey/collection" />
       <path value="$PROJECT_DIR$/laravel/vendor/ramsey/uuid" />
       <path value="$PROJECT_DIR$/laravel/vendor/spatie/laravel-package-tools" />
@@ -216,8 +215,6 @@
       <path value="$PROJECT_DIR$/laravel/vendor/hamcrest/hamcrest-php" />
       <path value="$PROJECT_DIR$/laravel/vendor/carbonphp/carbon-doctrine-types" />
       <path value="$PROJECT_DIR$/laravel/vendor/fruitcake/php-cors" />
-      <path value="$PROJECT_DIR$/laravel/vendor/paragonie/random_compat" />
-      <path value="$PROJECT_DIR$/laravel/vendor/paragonie/sodium_compat" />
       <path value="$PROJECT_DIR$/laravel/vendor/phpoption/phpoption" />
       <path value="$PROJECT_DIR$/laravel/vendor/ralouphie/getallheaders" />
       <path value="$PROJECT_DIR$/laravel/vendor/sebastian/cli-parser" />
