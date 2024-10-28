@@ -1,13 +1,15 @@
 <?php
 
+use App\Http\Controllers\ActionController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\GameController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\Auth\VerifyEmailController;
 
 // Public Authentication Routes
 Route::prefix('auth')->group(function () {
@@ -33,7 +35,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
-    });
 
-    // Hier kommen später deine Spiel-Routen hin
+        // Game Routes
+        Route::prefix('games')->group(function () {
+            Route::post('/', [GameController::class, 'create']);
+            Route::post('/{game}/start', [GameController::class, 'start']);
+            Route::get('/{game}/state', [GameController::class, 'getCurrentState']);
+            Route::post('/{game}/actions', [ActionController::class, 'perform']);
+        });
+    });
 });
