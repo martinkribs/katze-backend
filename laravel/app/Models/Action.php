@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -22,45 +23,25 @@ class Action extends Model
      *
      * @var array
      */
-    protected $fillable = ['round_id', 'player_id', 'action_type', 'target_player_id', 'result'];
+    protected $fillable = ['action_name', 'action_type_id'];
 
     /**
-     * Get the round associated with the action.
+     * Get the action types associated with the action.
      *
      * @return BelongsTo
      */
-    public function round(): BelongsTo
-    {
-        return $this->belongsTo(Round::class);
-    }
-
-    /**
-     * Get the player who performed the action.
-     *
-     * @return BelongsTo
-     */
-    public function player(): BelongsTo
-    {
-        return $this->belongsTo(Player::class);
-    }
-
-    /**
-     * Get the type of action performed.
-     *
-     * @return BelongsTo
-     */
-    public function actionType(): BelongsTo
+    public function actionType() : BelongsTo
     {
         return $this->belongsTo(ActionType::class);
     }
 
     /**
-     * Get the target player of the action.
+     * Get the players associated with the action.
      *
-     * @return BelongsTo
+     * @return BelongsToMany
      */
-    public function targetPlayer(): BelongsTo
+    public function players() : BelongsToMany
     {
-        return $this->belongsTo(Player::class, 'target_player_id');
+        return $this->belongsToMany(Player::class, 'player_action')->withTimestamps();
     }
 }

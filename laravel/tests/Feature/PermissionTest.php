@@ -1,92 +1,77 @@
 <?php
 
-namespace Tests\Feature;
-
-use Tests\TestCase;
 use App\Models\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class PermissionTest extends TestCase
-{
-    use RefreshDatabase;
+uses(RefreshDatabase::class);
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->seed(); // Run seeders to populate permissions
-    }
+beforeEach(function () {
+    $this->seed();
+});
 
-    public function test_cat_has_kill_permission()
-    {
-        $this->assertTrue(Permission::hasPermission('cat', 'kill'));
-        $this->assertTrue(Permission::hasPermission('cat', 'vote'));
-        $this->assertTrue(Permission::hasPermission('cat', 'view_night_chat'));
-        $this->assertFalse(Permission::hasPermission('cat', 'heal'));
-    }
+test('cat has correct permissions', function () {
+    expect(Permission::hasPermission('cat', 'kill'))->toBeTrue()
+        ->and(Permission::hasPermission('cat', 'vote'))->toBeTrue()
+        ->and(Permission::hasPermission('cat', 'view_night_chat'))->toBeTrue()
+        ->and(Permission::hasPermission('cat', 'heal'))->toBeFalse();
+});
 
-    public function test_witch_has_heal_permission()
-    {
-        $this->assertTrue(Permission::hasPermission('witch', 'heal'));
-        $this->assertTrue(Permission::hasPermission('witch', 'vote'));
-        $this->assertTrue(Permission::hasPermission('witch', 'use_poison'));
-        $this->assertFalse(Permission::hasPermission('witch', 'kill'));
-    }
+test('witch has correct permissions', function () {
+    expect(Permission::hasPermission('witch', 'heal'))->toBeTrue()
+        ->and(Permission::hasPermission('witch', 'vote'))->toBeTrue()
+        ->and(Permission::hasPermission('witch', 'use_poison'))->toBeTrue()
+        ->and(Permission::hasPermission('witch', 'kill'))->toBeFalse();
+});
 
-    public function test_villager_can_only_vote()
-    {
-        $this->assertTrue(Permission::hasPermission('villager', 'vote'));
-        $this->assertFalse(Permission::hasPermission('villager', 'kill'));
-        $this->assertFalse(Permission::hasPermission('villager', 'heal'));
-        $this->assertFalse(Permission::hasPermission('villager', 'see_role'));
-    }
+test('villager can only vote', function () {
+    expect(Permission::hasPermission('villager', 'vote'))->toBeTrue()
+        ->and(Permission::hasPermission('villager', 'kill'))->toBeFalse()
+        ->and(Permission::hasPermission('villager', 'heal'))->toBeFalse()
+        ->and(Permission::hasPermission('villager', 'see_role'))->toBeFalse();
+});
 
-    public function test_seer_can_see_roles()
-    {
-        $this->assertTrue(Permission::hasPermission('seer', 'see_role'));
-        $this->assertTrue(Permission::hasPermission('seer', 'vote'));
-        $this->assertFalse(Permission::hasPermission('seer', 'kill'));
-        $this->assertFalse(Permission::hasPermission('seer', 'heal'));
-    }
+test('seer can see roles', function () {
+    expect(Permission::hasPermission('seer', 'see_role'))->toBeTrue()
+        ->and(Permission::hasPermission('seer', 'vote'))->toBeTrue()
+        ->and(Permission::hasPermission('seer', 'kill'))->toBeFalse()
+        ->and(Permission::hasPermission('seer', 'heal'))->toBeFalse();
+});
 
-    public function test_get_all_permissions_for_role()
-    {
-        $catPermissions = Permission::getPermissionsForRole('cat')->pluck('permission')->toArray();
-        $this->assertContains('kill', $catPermissions);
-        $this->assertContains('vote', $catPermissions);
-        $this->assertContains('view_night_chat', $catPermissions);
-        $this->assertCount(3, $catPermissions);
+test('roles have correct permission counts', function () {
+    $catPermissions = Permission::getPermissionsForRole('cat')->pluck('permission')->toArray();
+    expect($catPermissions)->toContain('kill')
+        ->and($catPermissions)->toContain('vote')
+        ->and($catPermissions)->toContain('view_night_chat')
+        ->and($catPermissions)->toHaveCount(3);
 
-        $witchPermissions = Permission::getPermissionsForRole('witch')->pluck('permission')->toArray();
-        $this->assertContains('heal', $witchPermissions);
-        $this->assertContains('vote', $witchPermissions);
-        $this->assertContains('use_poison', $witchPermissions);
-        $this->assertCount(3, $witchPermissions);
-    }
+    $witchPermissions = Permission::getPermissionsForRole('witch')->pluck('permission')->toArray();
+    expect($witchPermissions)->toContain('heal')
+        ->and($witchPermissions)->toContain('vote')
+        ->and($witchPermissions)->toContain('use_poison')
+        ->and($witchPermissions)->toHaveCount(3);
+});
 
-    public function test_all_roles_can_vote()
-    {
-        $rolesWithVotePermission = Permission::getRolesWithPermission('vote');
-        $this->assertContains('cat', $rolesWithVotePermission);
-        $this->assertContains('witch', $rolesWithVotePermission);
-        $this->assertContains('villager', $rolesWithVotePermission);
-        $this->assertContains('seer', $rolesWithVotePermission);
-    }
+test('all roles can vote', function () {
+    $rolesWithVotePermission = Permission::getRolesWithPermission('vote');
+    expect($rolesWithVotePermission)->toContain('cat')
+        ->and($rolesWithVotePermission)->toContain('witch')
+        ->and($rolesWithVotePermission)->toContain('villager')
+        ->and($rolesWithVotePermission)->toContain('seer');
+});
 
-    public function test_special_abilities_are_role_specific()
-    {
-        // Only cats can kill
-        $rolesWithKillPermission = Permission::getRolesWithPermission('kill');
-        $this->assertCount(1, $rolesWithKillPermission);
-        $this->assertContains('cat', $rolesWithKillPermission);
+test('special abilities are role specific', function () {
+    // Only cats can kill
+    $rolesWithKillPermission = Permission::getRolesWithPermission('kill');
+    expect($rolesWithKillPermission)->toHaveCount(1)
+        ->and($rolesWithKillPermission)->toContain('cat');
 
-        // Only witches can heal
-        $rolesWithHealPermission = Permission::getRolesWithPermission('heal');
-        $this->assertCount(1, $rolesWithHealPermission);
-        $this->assertContains('witch', $rolesWithHealPermission);
+    // Only witches can heal
+    $rolesWithHealPermission = Permission::getRolesWithPermission('heal');
+    expect($rolesWithHealPermission)->toHaveCount(1)
+        ->and($rolesWithHealPermission)->toContain('witch');
 
-        // Only seers can see roles
-        $rolesWithSeeRolePermission = Permission::getRolesWithPermission('see_role');
-        $this->assertCount(1, $rolesWithSeeRolePermission);
-        $this->assertContains('seer', $rolesWithSeeRolePermission);
-    }
-}
+    // Only seers can see roles
+    $rolesWithSeeRolePermission = Permission::getRolesWithPermission('see_role');
+    expect($rolesWithSeeRolePermission)->toHaveCount(1)
+        ->and($rolesWithSeeRolePermission)->toContain('seer');
+});

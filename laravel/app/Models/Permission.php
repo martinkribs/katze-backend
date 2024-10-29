@@ -11,47 +11,14 @@ class Permission extends Model
      *
      * @var array<string>
      */
-    protected $fillable = [
-        'role',
-        'permission'
-    ];
+    protected $fillable = ['permission_name'];
 
     /**
-     * Check if a role has a specific permission
+     * Get the roles associated with the permission.
      *
-     * @param string $role
-     * @param string $permission
-     * @return bool
+     * @return HasMany
      */
-    public static function hasPermission(string $role, string $permission): bool
-    {
-        return static::where('role', $role)
-            ->where('permission', $permission)
-            ->exists();
-    }
-
-    /**
-     * Get all permissions for a specific role
-     *
-     * @param string $role
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public static function getPermissionsForRole(string $role)
-    {
-        return static::where('role', $role)->get();
-    }
-
-    /**
-     * Get all roles that have a specific permission
-     *
-     * @param string $permission
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public static function getRolesWithPermission(string $permission)
-    {
-        return static::where('permission', $permission)
-            ->pluck('role')
-            ->unique()
-            ->values();
+    public function roles() {
+        return $this->belongsToMany(Role::class, 'role_permission');
     }
 }

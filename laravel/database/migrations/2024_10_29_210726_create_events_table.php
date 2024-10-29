@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('rounds', function (Blueprint $table) {
+        Schema::create('events', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('game_id')->constrained();
-            $table->integer('round_number');
-            $table->boolean('is_day');
+            $table->foreignId('round_id')->constrained();
+            $table->foreignId('phase_id')->constrained();
+            $table->text('event_description');
             $table->timestamps();
         });
     }
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('rounds');
+        Schema::dropIfExists('events');
     }
 };

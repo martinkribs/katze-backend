@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Class Player
@@ -42,5 +44,35 @@ class Player extends Model
     public function game(): BelongsTo
     {
         return $this->belongsTo(Game::class);
+    }
+
+    /**
+     * Get the role associated with the player.
+     *
+     * @return BelongsTo
+     */
+    public function role() : BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Get the actions associated with the player.
+     *
+     * @return BelongsToMany
+     */
+    public function actions() : BelongsToMany
+    {
+        return $this->belongsToMany(Action::class, 'player_action')->withTimestamps();
+    }
+
+    /**
+     * Get the votes associated with the player.
+     *
+     * @return HasMany
+     */
+    public function votes() : HasMany
+    {
+        return $this->hasMany(Vote::class, 'voter_id');
     }
 }

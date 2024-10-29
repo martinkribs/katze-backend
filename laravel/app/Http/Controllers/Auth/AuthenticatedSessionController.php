@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
     /**
      * Handle an incoming authentication request.
+     * @throws ValidationException
      */
     public function store(LoginRequest $request): JsonResponse
     {
@@ -18,10 +20,10 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
 
-        // Lösche eventuell vorhandene alte Tokens
+        // Delete existing tokens
         $user->tokens()->delete();
 
-        // Erstelle neuen Token
+        // Create new token
         $token = $user->createToken('mobile-app')->plainTextToken;
 
         return response()->json([

@@ -11,14 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('actions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('round_id')->constrained();
-            $table->foreignId('player_id')->constrained();
+        Schema::create('role_action_type', function (Blueprint $table) {
+            $table->foreignId('role_id')->constrained();
             $table->foreignId('action_type_id')->constrained();
-            $table->foreignId('target_player_id')->nullable()->constrained('players');
-            $table->text('result')->nullable();
-            $table->timestamps();
+            $table->primary(['role_id', 'action_type_id']);
         });
     }
 
@@ -27,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('actions');
+        Schema::dropIfExists('role_action_type');
     }
 };

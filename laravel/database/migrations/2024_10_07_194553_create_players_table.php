@@ -13,12 +13,11 @@ return new class extends Migration
     {
         Schema::create('players', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
-            $table->foreignId('game_id')->constrained();
-            $table->string('role');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('game_id')->constrained()->onDelete('cascade');
+            $table->foreignId('role_id')->constrained()->onDelete('cascade');
             $table->boolean('is_alive')->default(true);
             $table->string('special_status')->nullable();
-            $table->timestamps();
         });
     }
 

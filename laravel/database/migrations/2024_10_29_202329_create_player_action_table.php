@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('rounds', function (Blueprint $table) {
+        Schema::create('player_action', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('game_id')->constrained();
-            $table->integer('round_number');
-            $table->boolean('is_day');
+            $table->foreignId('player_id')->constrained()->onDelete('cascade');
+            $table->foreignId('action_id')->constrained()->onDelete('cascade');
+            $table->timestamp('executed_at')->useCurrent();
             $table->timestamps();
         });
     }
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('rounds');
+        Schema::dropIfExists('player_action');
     }
 };

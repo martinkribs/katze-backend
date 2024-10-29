@@ -23,7 +23,7 @@ class Round extends Model
      *
      * @var array
      */
-    protected $fillable = ['game_id', 'round_number', 'start_time', 'end_time', 'is_day'];
+    protected $fillable = ['game_id', 'round_number', 'is_day'];
 
     /**
      * Get the game associated with the round.
@@ -46,12 +46,12 @@ class Round extends Model
     }
 
     /**
-     * Get the votes associated with the round.
+     * Get the events associated with the round.
      *
      * @return HasMany
      */
-    public function votes(): HasMany
+    public function events(): HasMany
     {
-        return $this->hasMany(Vote::class);
+        return $this->hasMany(Event::class);
     }
 }

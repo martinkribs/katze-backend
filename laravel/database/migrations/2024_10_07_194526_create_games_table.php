@@ -13,9 +13,8 @@ return new class extends Migration
     {
         Schema::create('games', function (Blueprint $table) {
             $table->id();
-            $table->enum('status', ['waiting', 'in_progress', 'finished']);
-            $table->timestamp('start_time')->nullable();
-            $table->timestamp('end_time')->nullable();
+            $table->foreignId('created_by')->constrained('users');
+            $table->string('timezone', 50);
             $table->timestamps();
         });
     }

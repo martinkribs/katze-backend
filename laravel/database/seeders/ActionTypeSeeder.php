@@ -6,9 +6,9 @@ use Illuminate\Database\Seeder;
 use App\Models\ActionType;
 
 /**
- * Class ActionTypeSeeder
+ * Class FunctionSeeder
  *
- * Seeds the database with predefined action types.
+ * Seeds the database with predefined functions.
  *
  * @package Database\Seeders
  */

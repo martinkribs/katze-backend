@@ -22,7 +22,7 @@ class Game extends Model
      *
      * @var array
      */
-    protected $fillable = ['status', 'start_time', 'end_time'];
+    protected $fillable = ['created_by', 'timezone'];
 
     /**
      * Get the players associated with the game.

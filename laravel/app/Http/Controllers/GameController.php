@@ -7,6 +7,7 @@ use App\Models\Player;
 use App\Models\Round;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class GameController extends Controller
 {
@@ -18,7 +19,7 @@ class GameController extends Controller
             'player_ids.*' => 'exists:users,id'
         ]);
 
-        return Game::transaction(function () use ($request) {
+        return DB::transaction(function () use ($request) {
             $game = Game::create([
                 'status' => 'waiting',
                 'start_time' => null,
