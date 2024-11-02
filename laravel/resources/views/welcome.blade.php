@@ -13,18 +13,18 @@
                 <div class="py-12 text-center text-gray-800 dark:text-gray-200">
                     <h1 class="text-xl font-bold mb-6">{{ __('Welcome to Katze') }}</h1>
                     <p class="text-xl mb-4">
-                        {{ __('A social deduction game where villagers must work together to identify the werewolves among them.') }}
+                        {{ __('messages.work_together_identify_werewolves') }}
                     </p>
                     <p class="mb-4">
-                        {{ __('Join a game, survive the night, and help your team win!') }}
+                        {{ __('messages.join_survive_help') }}
                     </p>
                     @auth
                         <a href="{{ route('dashboard') }}" class="mt-6 inline-block text-black font-bold py-2 px-4 rounded hover:bg-opacity-75" style="background-color: #e7d49e;">
-                            {{ __('Start Playing') }}
+                            {{ __('messages.start_playing') }}
                         </a>
                     @else
                         <a href="{{ route('register') }}" class="mt-6 inline-block text-black font-bold py-2 px-4 rounded hover:bg-opacity-75" style="background-color: #e7d49e;">
-                            {{ __('Join Now') }}
+                            {{ __('messages.join_now') }}
                         </a>
                     @endauth
                 </div>
