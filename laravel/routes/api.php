@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ApiEmailVerificationNotificationController;
 use App\Http\Controllers\Api\ApiPasswordResetLinkController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -19,9 +20,11 @@ Route::prefix('auth')->group(function () {
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
 
+    Route::post('email/verification-notification', [ApiEmailVerificationNotificationController::class, 'store'])
+        ->middleware('throttle:6,1');
     Route::post('/logout', [ApiAuthenticatedSessionController::class, 'destroy']);
 
-    Route::middleware('verified')->group(function () {
+    Route::middleware('verified-api')->group(function () {
         // User Info
         Route::get('/user', function (Request $request) {
             return $request->user();
