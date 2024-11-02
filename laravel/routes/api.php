@@ -19,8 +19,7 @@ Route::prefix('auth')->group(function () {
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
 
-    Route::post('/logout', [ApiAuthenticatedSessionController::class, 'destroy'])
-        ->name('logout');
+    Route::post('/logout', [ApiAuthenticatedSessionController::class, 'destroy']);
 
     Route::middleware('verified')->group(function () {
         // User Info
