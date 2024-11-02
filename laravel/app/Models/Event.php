@@ -4,18 +4,27 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['round_id', 'phase_id', 'event_description'];
+    protected $fillable = [
+        'event_name',
+        'description',
+        'duration_minutes'
+    ];
 
-    public function round() {
-        return $this->belongsTo(Round::class);
-    }
+    protected $casts = [
+        'duration_minutes' => 'integer'
+    ];
 
-    public function phase() {
-        return $this->belongsTo(Phase::class);
+    /**
+     * Get the phases associated with this event.
+     */
+    public function phases(): HasMany
+    {
+        return $this->hasMany(Phase::class);
     }
 }

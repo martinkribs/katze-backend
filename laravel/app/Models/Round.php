@@ -7,28 +7,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Class Round
- *
- * Represents a round model in the application.
- *
- * @package App\Models
- */
 class Round extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = ['game_id', 'round_number', 'is_day'];
+    protected $fillable = [
+        'game_id',
+        'round_number',
+        'is_day'
+    ];
+
+    protected $casts = [
+        'is_day' => 'boolean'
+    ];
 
     /**
-     * Get the game associated with the round.
-     *
-     * @return BelongsTo
+     * Get the game that owns the round.
      */
     public function game(): BelongsTo
     {
@@ -36,9 +30,7 @@ class Round extends Model
     }
 
     /**
-     * Get the actions associated with the round.
-     *
-     * @return HasMany
+     * Get the actions for this round.
      */
     public function actions(): HasMany
     {
@@ -46,12 +38,18 @@ class Round extends Model
     }
 
     /**
-     * Get the events associated with the round.
-     *
-     * @return HasMany
+     * Get the votes for this round.
      */
-    public function events(): HasMany
+    public function votes(): HasMany
     {
-        return $this->hasMany(Event::class);
+        return $this->hasMany(Vote::class);
+    }
+
+    /**
+     * Get the phases for this round.
+     */
+    public function phases(): HasMany
+    {
+        return $this->hasMany(Phase::class);
     }
 }

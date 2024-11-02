@@ -5,31 +5,34 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Class Player
- *
- * Represents a player model in the application.
- *
- * @package App\Models
- */
 class Player extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = ['user_id', 'game_id', 'role', 'is_alive', 'special_status'];
+    protected $fillable = [
+        'game_instance_id',
+        'user_id',
+        'role_id',
+        'is_alive',
+        'special_status'
+    ];
+
+    protected $casts = [
+        'is_alive' => 'boolean'
+    ];
 
     /**
-     * Get the user associated with the player.
-     *
-     * @return BelongsTo
+     * Get the game instance this player belongs to.
+     */
+    public function gameInstance(): BelongsTo
+    {
+        return $this->belongsTo(GameInstance::class);
+    }
+
+    /**
+     * Get the user associated with this player.
      */
     public function user(): BelongsTo
     {
@@ -37,42 +40,42 @@ class Player extends Model
     }
 
     /**
-     * Get the game associated with the player.
-     *
-     * @return BelongsTo
+     * Get the role of this player.
      */
-    public function game(): BelongsTo
-    {
-        return $this->belongsTo(Game::class);
-    }
-
-    /**
-     * Get the role associated with the player.
-     *
-     * @return BelongsTo
-     */
-    public function role() : BelongsTo
+    public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
 
     /**
-     * Get the actions associated with the player.
-     *
-     * @return BelongsToMany
+     * Get the actions executed by this player.
      */
-    public function actions() : BelongsToMany
+    public function executedActions(): HasMany
     {
-        return $this->belongsToMany(Action::class, 'player_action')->withTimestamps();
+        return $this->hasMany(Action::class, 'executing_player_id');
     }
 
     /**
-     * Get the votes associated with the player.
-     *
-     * @return HasMany
+     * Get the actions targeting this player.
      */
-    public function votes() : HasMany
+    public function targetedActions(): HasMany
+    {
+        return $this->hasMany(Action::class, 'target_player_id');
+    }
+
+    /**
+     * Get the votes cast by this player.
+     */
+    public function votesGiven(): HasMany
     {
         return $this->hasMany(Vote::class, 'voter_id');
+    }
+
+    /**
+     * Get the votes received by this player.
+     */
+    public function votesReceived(): HasMany
+    {
+        return $this->hasMany(Vote::class, 'target_id');
     }
 }

@@ -6,46 +6,38 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/**
- * Class ActionType
- *
- * Represents an action type model in the application.
- *
- * @package App\Models
- */
 class ActionType extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'name',
         'description',
         'usage_limit',
         'effect',
-        'target_type',
+        'target_type'
     ];
 
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
-     */
     protected $casts = [
         'usage_limit' => 'integer',
+        'effect' => 'string',
+        'target_type' => 'string'
     ];
 
     /**
-     * Get the actions associated with the action type.
-     *
-     * @return HasMany
+     * Get the actions of this type.
      */
     public function actions(): HasMany
     {
         return $this->hasMany(Action::class);
+    }
+
+    /**
+     * Get the roles that can use this action type.
+     */
+    public function roles(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'player_action_type')
+                    ->withPivot('role_name');
     }
 }

@@ -6,28 +6,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Class Vote
- *
- * Represents a vote model in the application.
- *
- * @package App\Models
- */
 class Vote extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = ['round_id', 'voter_id', 'target_id'];
+    protected $fillable = [
+        'round_id',
+        'voter_id',
+        'target_id',
+        'reason'
+    ];
 
     /**
-     * Get the round associated with the vote.
-     *
-     * @return BelongsTo
+     * Get the round this vote belongs to.
      */
     public function round(): BelongsTo
     {
@@ -36,8 +27,6 @@ class Vote extends Model
 
     /**
      * Get the player who cast the vote.
-     *
-     * @return BelongsTo
      */
     public function voter(): BelongsTo
     {
@@ -45,9 +34,7 @@ class Vote extends Model
     }
 
     /**
-     * Get the target player of the vote.
-     *
-     * @return BelongsTo
+     * Get the player who was voted for.
      */
     public function target(): BelongsTo
     {

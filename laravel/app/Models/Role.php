@@ -4,14 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Role extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['role_name'];
+    protected $fillable = [
+        'name',
+        'description',
+        'team',
+        'can_use_night_action'
+    ];
+
+    protected $casts = [
+        'can_use_night_action' => 'boolean'
+    ];
 
     /**
      * Get the players with this role.
@@ -22,10 +31,11 @@ class Role extends Model
     }
 
     /**
-     * Get the action types this role can perform.
+     * Get the action types available to this role.
      */
-    public function actionTypes() : BelongsToMany
+    public function actionTypes(): BelongsToMany
     {
-        return $this->belongsToMany(ActionType::class, 'role_action_type');
+        return $this->belongsToMany(ActionType::class, 'player_action_type')
+                    ->withPivot('role_name');
     }
 }

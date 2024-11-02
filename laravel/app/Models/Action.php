@@ -4,44 +4,63 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Class Action
- *
- * Represents an action model in the application.
- *
- * @package App\Models
- */
 class Action extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = ['action_name', 'action_type_id'];
+    protected $fillable = [
+        'round_id',
+        'executing_player_id',
+        'target_player_id',
+        'action_type_id',
+        'result_type_id',
+        'action_notes',
+        'is_successful'
+    ];
+
+    protected $casts = [
+        'is_successful' => 'boolean'
+    ];
 
     /**
-     * Get the action types associated with the action.
-     *
-     * @return BelongsTo
+     * Get the round this action belongs to.
      */
-    public function actionType() : BelongsTo
+    public function round(): BelongsTo
+    {
+        return $this->belongsTo(Round::class);
+    }
+
+    /**
+     * Get the player executing the action.
+     */
+    public function executingPlayer(): BelongsTo
+    {
+        return $this->belongsTo(Player::class, 'executing_player_id');
+    }
+
+    /**
+     * Get the player targeted by the action.
+     */
+    public function targetPlayer(): BelongsTo
+    {
+        return $this->belongsTo(Player::class, 'target_player_id');
+    }
+
+    /**
+     * Get the type of this action.
+     */
+    public function actionType(): BelongsTo
     {
         return $this->belongsTo(ActionType::class);
     }
 
     /**
-     * Get the players associated with the action.
-     *
-     * @return BelongsToMany
+     * Get the result type of this action.
      */
-    public function players() : BelongsToMany
+    public function resultType(): BelongsTo
     {
-        return $this->belongsToMany(Player::class, 'player_action')->withTimestamps();
+        return $this->belongsTo(ResultType::class);
     }
 }
