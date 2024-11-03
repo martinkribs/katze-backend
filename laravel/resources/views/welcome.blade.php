@@ -11,7 +11,7 @@
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-lg sm:rounded-lg">
                 <div class="py-12 text-center text-gray-800 dark:text-gray-200">
-                    <h1 class="text-xl font-bold mb-6">{{ __('Welcome to Katze') }}</h1>
+                    <h1 class="text-xl font-bold mb-6">{{ __('messages.welcome') }}</h1>
                     <p class="text-xl mb-4">
                         {{ __('messages.work_together_identify_werewolves') }}
                     </p>
