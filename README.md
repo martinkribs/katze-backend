@@ -21,40 +21,44 @@ This is the backend for the Katze application, built with Laravel and deployed o
 2. Start the Docker containers:
 
     ```bash
-    docker-compose -f docker-compose.dev.yml up -d
+    docker-compose up -d
     ```
-   
-3. Install PHP dependencies:
+3. Go to the right directory:
 
     ```bash
     cd laravel
+    ```
+   
+4. Install PHP dependencies:
+
+    ```bash
     composer install
     ```
    
-4. Copy the `.env.example` file to `.env`:
+5. Copy the `.env.example` file to `.env`:
 
     ```bash
     cp .env.example .env
     ```
    
-5. Generate an application key:
+6. Generate an application key:
 
     ```bash
     php artisan key:generate
     ```
    
-6. Run the migrations:
+7. Run the migrations:
 
     ```bash
     php artisan migrate
     ```
-7. Seed the database:
+8. Seed the database:
 
     ```bash
     php artisan db:seed
     ```
 
-8. Start the development server:
+9. Start the development server:
 
     ```bash
     php artisan serve

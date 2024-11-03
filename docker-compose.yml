@@ -1,66 +1,5 @@
 services:
 
-  # Katze Backend Service
-  app:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    container_name: katze-backend
-    restart: unless-stopped
-    depends_on:
-      - mysql
-      - redis
-      - meilisearch
-      - mailcatcher
-    tty: true
-    environment:
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: katze
-      DB_USERNAME: root
-      DB_PASSWORD: root
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      CACHE_STORE: redis
-      SESSION_DRIVER: redis
-      MAIL_MAILER: smtp
-      MAIL_HOST: mailcatcher
-      MAIL_PORT: 1025
-      MEILISEARCH_HOST: http://katze-meilisearch:7700
-      MEILISEARCH_KEY: katze-meilisearch
-
-    working_dir: /var/www/laravel
-    volumes:
-      - ./laravel/app:/var/www/laravel/app
-      - ./laravel/routes:/var/www/laravel/routes
-      - ./laravel/database:/var/www/laravel/database
-      - ./laravel/resources:/var/www/laravel/resources
-      - ./laravel/config:/var/www/laravel/config
-      - ./laravel/storage:/var/www/laravel/storage
-      - ./laravel/tests:/var/www/laravel/tests
-      - ./laravel/lang:/var/www/laravel/lang
-    networks:
-      - app-network
-    ports:
-      - "22:22"
-
-  # Nginx Service
-  nginx:
-    image: nginx:stable-alpine
-    container_name: nginx
-    restart: unless-stopped
-    tty: true
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/development/conf.d:/etc/nginx/conf.d/
-    depends_on:
-      - app
-    networks:
-      - app-network
-
   # MySQL Service
   mysql:
     image: mysql:8
@@ -75,18 +14,20 @@ services:
       SERVICE_TAGS: dev
       SERVICE_NAME: mysql
     volumes:
-      - mysql:/var/lib/mysql
+      - vol_mysql:/var/lib/mysql
     networks:
       - app-network
 
   # Redis Service
   redis:
-    image: redis:latest
+    image: redis:alpine
     container_name: redis
     restart: unless-stopped
     tty: true
     ports:
       - "6379:6379"
+    volumes:
+      - vol_redis:/data
     networks:
       - app-network
 
@@ -98,19 +39,19 @@ services:
     ports:
       - "7700:7700"
     volumes:
-      - ./data.ms:/data.ms
+      - vol_meilisearch:/data.ms
     networks:
       - app-network
 
   # MailCatcher Service
-  mailcatcher:
-    image: schickling/mailcatcher:latest
-    container_name: mailcatcher
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
     restart: unless-stopped
     tty: true
     ports:
       - "1025:1025" # SMTP
-      - "1080:1080" # Web Interface
+      - "8025:8025" # Web Interface
     networks:
       - app-network
 
@@ -123,11 +64,22 @@ services:
     ports:
       - "6001:6001"
       - "9601:9601"
+    environment:
+      SOKETI_DEBUG: '0'
+      SOKETI_METRICS_SERVER_PORT: '9601'
+      SOKETI_DEFAULT_APP_ID: 'your-pusher-app-id'
+      SOKETI_DEFAULT_APP_KEY: 'your-pusher-key'
+      SOKETI_DEFAULT_APP_SECRET: 'your-pusher-secret'
     networks:
       - app-network
 
 volumes:
-  mysql:
+  vol_mysql:
+    driver: local
+  vol_redis:
+    driver: local
+  vol_meilisearch:
+    driver: local
 
 networks:
   app-network:
