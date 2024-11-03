@@ -15,11 +15,25 @@ spec:
       labels:
         app: meilisearch
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: meilisearch
-          image: getmeili/meilisearch:latest
+          image: getmeili/meilisearch:v1.11  # Specify version instead of latest
           ports:
             - containerPort: 7700
+              name: http
+          env:
+            - name: MEILI_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MEILISEARCH_KEY
+            - name: MEILI_NO_ANALYTICS
+              value: "true"
+            - name: MEILI_ENV
+              value: "production"
           resources:
             limits:
               memory: "512Mi"
@@ -29,13 +43,19 @@ spec:
               cpu: "250m"
           volumeMounts:
             - name: meilisearch-storage
-              mountPath: /data.ms
+              mountPath: /meili_data
           readinessProbe:
             httpGet:
               path: /health
               port: 7700
             initialDelaySeconds: 10
             periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7700
+            initialDelaySeconds: 30
+            periodSeconds: 30
       volumes:
         - name: meilisearch-storage
           persistentVolumeClaim:
@@ -50,6 +70,7 @@ spec:
   selector:
     app: meilisearch
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 7700
       targetPort: 7700

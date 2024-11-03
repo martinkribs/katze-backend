@@ -1,0 +1,3 @@
+# Never commit actual secrets to git
+secrets.yml
+*-secrets.yml

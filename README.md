@@ -85,13 +85,60 @@ php artisan test
 
 1. Ensure your kubectl is configured to connect to your K3s cluster.
 
-2. Apply the Kubernetes configurations:
-
+2. Create your secrets file from the template:
     ```bash
-    kubectl apply -f kubernetes/
+    cp kubernetes/secrets.template.yml kubernetes/secrets.yml
     ```
-3. Check the status of your pods:
 
+3. Edit kubernetes/secrets.yml and fill in your base64-encoded values:
+    ```bash
+    # For each value you want to encode:
+    echo -n "your-actual-value" | base64
+    ```
+
+4. Apply the Kubernetes configurations in the following order:
+
+    a. Create namespace (if not exists):
+    ```bash
+    kubectl create namespace katze-backend
+    ```
+
+    b. Apply secrets first (they're needed by other resources):
+    ```bash
+    kubectl apply -f kubernetes/secrets.yml
+    ```
+
+    c. Apply storage resources:
+    ```bash
+    kubectl apply -f kubernetes/pvc.yml
+    kubectl apply -f kubernetes/mailu-pvc.yml
+    ```
+
+    d. Apply Traefik configuration:
+    ```bash
+    kubectl apply -f kubernetes/traefik-config.yml
+    ```
+
+    e. Apply core services and deployments:
+    ```bash
+    kubectl apply -f kubernetes/mysql-deployment.yml
+    kubectl apply -f kubernetes/redis-deployment.yml
+    kubectl apply -f kubernetes/meilisearch-deployment.yml
+    kubectl apply -f kubernetes/app-deployment.yml
+    kubectl apply -f kubernetes/nginx-deployment.yml
+    ```
+
+    f. Apply Mailu deployment:
+    ```bash
+    kubectl apply -f kubernetes/mailu-deployment.yml
+    ```
+
+    g. Finally, apply ingress (after all services are running):
+    ```bash
+    kubectl apply -f kubernetes/ingress.yml
+    ```
+
+5. Check the status of your pods:
     ```bash
     kubectl get pods -n katze-backend
     ```
@@ -108,6 +155,7 @@ This application relies on several services:
 - Redis
 - Meilisearch
 - Soketi (for WebSockets)
+- Mailu (for Email)
 
 Ensure these services are properly configured in your local and production environments.
 
