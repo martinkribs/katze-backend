@@ -46,6 +46,6 @@ class VerifyEmailController extends Controller
             ], 200);
         }
 
-        return redirect()->route('dashboard')->with('status', 'Email has been verified');
+        return redirect()->route('login')->with('status', 'Email has been verified');
     }
 }

@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('game_instances', function (Blueprint $table) {
             $table->id();
             $table->foreignId('game_id')->constrained('games');
-            $table->foreignId('user_id')->constrained('users');
+            $table->enum('status', ['waiting', 'in_progress', 'completed', 'cancelled'])->default('waiting');
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('ended_at')->nullable();
+            $table->json('game_state')->nullable(); // Stores current game state (phase, round, etc.)
             $table->timestamps();
         });
     }

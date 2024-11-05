@@ -15,6 +15,16 @@ return new class extends Migration
             $table->id();
             $table->foreignId('created_by')->constrained('users');
             $table->string('timezone', 50);
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->json('role_configuration'); // Stores the number of each role type
+            $table->integer('min_players');
+            $table->integer('max_players');
+            $table->integer('day_duration_minutes')->default(10);
+            $table->integer('night_duration_minutes')->default(5);
+            $table->boolean('is_private')->default(false);
+            $table->string('join_code')->nullable()->unique();
+            $table->enum('status', ['waiting', 'in_progress', 'completed', 'cancelled'])->default('waiting');
             $table->timestamps();
         });
     }

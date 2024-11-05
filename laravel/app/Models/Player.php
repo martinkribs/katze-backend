@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Player extends Model
 {
@@ -16,11 +15,15 @@ class Player extends Model
         'user_id',
         'role_id',
         'is_alive',
-        'special_status'
+        'is_game_master',
+        'special_status',
+        'additional_info'
     ];
 
     protected $casts = [
-        'is_alive' => 'boolean'
+        'is_alive' => 'boolean',
+        'is_game_master' => 'boolean',
+        'additional_info' => 'array'
     ];
 
     /**
@@ -40,7 +43,7 @@ class Player extends Model
     }
 
     /**
-     * Get the role of this player.
+     * Get the role assigned to this player.
      */
     public function role(): BelongsTo
     {
@@ -48,34 +51,26 @@ class Player extends Model
     }
 
     /**
-     * Get the actions executed by this player.
+     * Scope a query to only include alive players.
      */
-    public function executedActions(): HasMany
+    public function scopeAlive($query)
     {
-        return $this->hasMany(Action::class, 'executing_player_id');
+        return $query->where('is_alive', true);
     }
 
     /**
-     * Get the actions targeting this player.
+     * Determine if the player can perform actions.
      */
-    public function targetedActions(): HasMany
+    public function canPerformActions(): bool
     {
-        return $this->hasMany(Action::class, 'target_player_id');
+        return $this->is_alive && $this->role && $this->role->can_use_night_action;
     }
 
     /**
-     * Get the votes cast by this player.
+     * Mark the player as eliminated.
      */
-    public function votesGiven(): HasMany
+    public function eliminate(): void
     {
-        return $this->hasMany(Vote::class, 'voter_id');
-    }
-
-    /**
-     * Get the votes received by this player.
-     */
-    public function votesReceived(): HasMany
-    {
-        return $this->hasMany(Vote::class, 'target_id');
+        $this->update(['is_alive' => false]);
     }
 }
