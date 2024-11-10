@@ -19,12 +19,4 @@ class Event extends Model
     protected $casts = [
         'duration_minutes' => 'integer'
     ];
-
-    /**
-     * Get the phases associated with this event.
-     */
-    public function phases(): HasMany
-    {
-        return $this->hasMany(Phase::class);
-    }
 }

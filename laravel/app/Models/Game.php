@@ -21,6 +21,7 @@ class Game extends Model
         'role_configuration',
         'min_players',
         'is_private',
+        'is_day',
         'join_code',
         'status'
     ];

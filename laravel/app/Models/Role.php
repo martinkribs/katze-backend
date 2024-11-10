@@ -25,9 +25,9 @@ class Role extends Model
     /**
      * Get the players with this role.
      */
-    public function players(): HasMany
+    public function users(): HasMany
     {
-        return $this->hasMany(Player::class);
+        return $this->hasMany(User::class);
     }
 
     /**
@@ -35,7 +35,7 @@ class Role extends Model
      */
     public function actionTypes(): BelongsToMany
     {
-        return $this->belongsToMany(ActionType::class, 'player_action_type')
+        return $this->belongsToMany(ActionType::class, 'role_action_type')
                     ->withPivot('role_name');
     }
 }

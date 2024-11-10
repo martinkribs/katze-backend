@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Round extends Model
+class VotingRound extends Model
 {
     use HasFactory;
 
@@ -43,13 +43,5 @@ class Round extends Model
     public function votes(): HasMany
     {
         return $this->hasMany(Vote::class);
-    }
-
-    /**
-     * Get the phases for this round.
-     */
-    public function phases(): HasMany
-    {
-        return $this->hasMany(Phase::class);
     }
 }

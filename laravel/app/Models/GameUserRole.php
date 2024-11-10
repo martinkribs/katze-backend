@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Log;
 
 class GameUserRole extends Model
 {
@@ -14,16 +12,12 @@ class GameUserRole extends Model
 
     protected $fillable = [
         'game_id',
-        'status',
-        'started_at',
-        'ended_at',
-        'game_state'
-    ];
-
-    protected $casts = [
-        'started_at' => 'datetime',
-        'ended_at' => 'datetime',
-        'game_state' => 'array'
+        'user_id',
+        'role_id',
+        'connection_status',
+        'user_status',
+        'affected_user',
+        'is_game_master'
     ];
 
     /**
@@ -35,154 +29,34 @@ class GameUserRole extends Model
     }
 
     /**
-     * Get all players in this game instance.
+     * Get the user for this game role.
      */
-    public function users(): HasMany
+    public function user(): BelongsTo
     {
-        return $this->hasMany(User::class);
+        return $this->belongsTo(User::class);
     }
 
     /**
-     * Get the game master for this game instance.
+     * Get the role for this game user.
      */
-    public function gameMaster(): ?User
+    public function role(): BelongsTo
     {
-        return $this->players()->where('is_game_master', true)->first();
+        return $this->belongsTo(Role::class);
     }
 
     /**
-     * Get all alive players.
+     * Get the affected user in this game instance.
      */
-    public function alivePlayers()
+    public function affectedUser(): BelongsTo
     {
-        return $this->players()->where('is_alive', true);
+        return $this->belongsTo(User::class, 'affected_user');
     }
 
     /**
-     * Start the game instance.
+     * Determine if this is a game master instance.
      */
-    public function start(): void
+    public function isGameMaster(): bool
     {
-        $this->update([
-            'status' => 'in_progress',
-            'started_at' => now(),
-            'game_state' => [
-                'current_phase' => 'day',
-                'day_number' => 1,
-                'votes' => [],
-                'actions' => []
-            ]
-        ]);
-    }
-
-    /**
-     * End the game instance.
-     */
-    public function end(string $winningTeam): void
-    {
-        $this->update([
-            'status' => 'completed',
-            'ended_at' => now(),
-            'game_state' => array_merge($this->game_state ?? [], [
-                'winner' => $winningTeam
-            ])
-        ]);
-    }
-
-    /**
-     * Assign roles to players.
-     */
-    public function assignRoles(): void
-    {
-        $players = $this->players;
-        $game = $this->game;
-
-        // Get roles based on game configuration
-        $roles = Role::whereIn('id', array_keys($game->role_configuration))->get();
-
-        // Shuffle players to randomize role assignment
-        $shuffledPlayers = $players->shuffle();
-
-        // Assign roles
-        $roleAssignments = [];
-        foreach ($roles as $role) {
-            $count = $game->role_configuration[$role->id] ?? 0;
-            for ($i = 0; $i < $count; $i++) {
-                if ($shuffledPlayers->isNotEmpty()) {
-                    $player = $shuffledPlayers->shift();
-                    $player->update([
-                        'role_id' => $role->id
-                    ]);
-                    $roleAssignments[] = $player->id;
-                }
-            }
-        }
-
-        // Assign remaining players a default role (Villager)
-        $defaultRoleId = Role::where('name', 'Villager')->first()->id;
-        foreach ($shuffledPlayers as $player) {
-            $player->update([
-                'role_id' => $defaultRoleId
-            ]);
-        }
-
-        // Log role distribution for debugging
-        Log::info('Role Distribution', [
-            'game_instance_id' => $this->id,
-            'role_assignments' => $roleAssignments
-        ]);
-    }
-
-    /**
-     * Check if the game is over.
-     */
-    public function checkGameOver(): ?string
-    {
-        $players = $this->players;
-        $catPlayers = $players->filter(function ($player) {
-            return $player->is_alive && $player->role->team === 'cats';
-        });
-        $villagerPlayers = $players->filter(function ($player) {
-            return $player->is_alive && $player->role->team === 'villagers';
-        });
-
-        if ($catPlayers->count() >= $villagerPlayers->count()) {
-            return 'cats';
-        }
-
-        if ($catPlayers->count() === 0) {
-            return 'villagers';
-        }
-
-        return null;
-    }
-
-    /**
-     * Progress to the next phase.
-     */
-    public function progressPhase(): void
-    {
-        $gameState = $this->game_state;
-        
-        // Toggle between day and night
-        $gameState['current_phase'] = 
-            $gameState['current_phase'] === 'day' ? 'night' : 'day';
-        
-        // Increment day number if switching to day
-        if ($gameState['current_phase'] === 'day') {
-            $gameState['day_number']++;
-        }
-
-        // Reset votes and actions
-        $gameState['votes'] = [];
-        $gameState['actions'] = [];
-
-        $this->update(['game_state' => $gameState]);
-
-        // Check for game over condition
-        $winner = $this->checkGameOver();
-        if ($winner) {
-            $this->end($winner);
-        }
+        return $this->is_game_master === true;
     }
 }

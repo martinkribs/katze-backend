@@ -22,7 +22,7 @@ class Vote extends Model
      */
     public function round(): BelongsTo
     {
-        return $this->belongsTo(Round::class);
+        return $this->belongsTo(VotingRound::class);
     }
 
     /**
@@ -30,7 +30,7 @@ class Vote extends Model
      */
     public function voter(): BelongsTo
     {
-        return $this->belongsTo(Player::class, 'voter_id');
+        return $this->belongsTo(User::class, 'voter_id');
     }
 
     /**
@@ -38,6 +38,6 @@ class Vote extends Model
      */
     public function target(): BelongsTo
     {
-        return $this->belongsTo(Player::class, 'target_id');
+        return $this->belongsTo(User::class, 'target_id');
     }
 }

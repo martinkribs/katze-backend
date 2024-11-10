@@ -38,7 +38,9 @@ class GameController extends Controller
                     'created_by' => Auth::id(),
                     'name' => $request->name,
                     'description' => $request->description,
+                    'role_configuration' => '{}',
                     'is_private' => $request->is_private ?? false,
+                    'is_day' => true,
                     'join_code' => $request->is_private ? Game::generateJoinCode() : null,
                     'timezone' => $request->timezone,
                     'status' => 'waiting'
@@ -225,6 +227,9 @@ class GameController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+
         $query = Game::where(function ($query) {
                 $query->where('is_private', false)
                     ->orWhere('created_by', Auth::id())
@@ -234,11 +239,27 @@ class GameController extends Controller
                     });
             });
 
-        $games = $query->with('creator')
-            ->withCount('users')
-            ->paginate(10);
+        $games = $query->withCount('users')
+            ->paginate($perPage, ['*'], 'page', $page);
 
-        return response()->json($games);
+        $transformedGames = $games->map(function ($game) {
+            return [
+                'id' => $game->id,
+                'name' => $game->name,
+                'status' => $game->status,
+                'playerCount' => $game->users_count
+            ];
+        });
+
+        return response()->json([
+            'games' => $transformedGames,
+            'meta' => [
+                'current_page' => $games->currentPage(),
+                'last_page' => $games->lastPage(),
+                'per_page' => $games->perPage(),
+                'total' => $games->total()
+            ]
+        ]);
     }
 
     /**
@@ -246,11 +267,28 @@ class GameController extends Controller
      */
     public function show(Game $game): JsonResponse
     {
-        $game->load([
-            'creator',
-            'users.pivot'
-        ]);
+        // Find the current user's game role
+        $userGameRole = $game->users()
+            ->where('user_id', Auth::id())
+            ->first();
 
-        return response()->json($game);
+        // Prepare players with detailed information
+        $players = $game->users->map(function ($user) {
+            $pivot = $user->pivot;
+            return [
+                'name' => $user->name,
+                'role' => $pivot->role_id ? Role::find($pivot->role_id)->name : null,
+                'isGameMaster' => $pivot->is_game_master,
+                'userStatus' => $pivot->user_status
+            ];
+        });
+
+        // Prepare response
+        return response()->json([
+            'name' => $game->name,
+            'isGameMaster' => $userGameRole ? $userGameRole->pivot->is_game_master : false,
+            'players' => $players,
+            'gameStatus' => $game->status,
+        ]);
     }
 }

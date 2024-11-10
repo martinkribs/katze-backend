@@ -18,12 +18,12 @@ return new class extends Migration
             $table->foreignId('role_id')->nullable()->constrained('roles')->onDelete('set null');
             $table->enum('connection_status', ['invited', 'joined', 'left', 'kicked'])->default('invited');
             $table->enum('user_status', ['alive', 'dead', 'in_love'])->default('alive');
-            $table->foreignId('affected_user')->constrained('users')->onDelete('cascade');
+            $table->foreignId('affected_user')->nullable()->constrained('users')->onDelete('cascade');
             $table->boolean('is_game_master')->default(false);
             $table->timestamps();
 
             // Ensure unique combination of game and user
-            $table->unique(['game_id', 'user_id']);
+            $table->unique(['game_id', 'user_id', 'role_id']);
         });
     }
 
