@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Log;
 
-class GameInstance extends Model
+class GameUserRole extends Model
 {
     use HasFactory;
 
@@ -37,15 +37,15 @@ class GameInstance extends Model
     /**
      * Get all players in this game instance.
      */
-    public function players(): HasMany
+    public function users(): HasMany
     {
-        return $this->hasMany(Player::class);
+        return $this->hasMany(User::class);
     }
 
     /**
      * Get the game master for this game instance.
      */
-    public function gameMaster(): ?Player
+    public function gameMaster(): ?User
     {
         return $this->players()->where('is_game_master', true)->first();
     }

@@ -18,7 +18,6 @@ return new class extends Migration
             $table->integer('usage_limit')->nullable();
             $table->enum('effect', ['kill', 'heal', 'protect', 'reveal', 'block', 'convert', 'other']);
             $table->enum('target_type', ['single', 'multiple', 'self', 'none']);
-            $table->timestamps();
         });
     }
 

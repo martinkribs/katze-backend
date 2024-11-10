@@ -17,12 +17,10 @@ return new class extends Migration
             $table->string('timezone', 50);
             $table->string('name');
             $table->text('description')->nullable();
-            $table->json('role_configuration'); // Stores the number of each role type
+            $table->json('role_configuration');
             $table->integer('min_players');
-            $table->integer('max_players');
-            $table->integer('day_duration_minutes')->default(10);
-            $table->integer('night_duration_minutes')->default(5);
             $table->boolean('is_private')->default(false);
+            $table->boolean('is_day');
             $table->string('join_code')->nullable()->unique();
             $table->enum('status', ['waiting', 'in_progress', 'completed', 'cancelled'])->default('waiting');
             $table->timestamps();

@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('votes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('round_id')->constrained('rounds');
-            $table->foreignId('voter_id')->constrained('players');
-            $table->foreignId('target_id')->constrained('players');
+            $table->foreignId('round_id')->constrained('voting_rounds');
+            $table->foreignId('voter_id')->constrained('users');
+            $table->foreignId('target_id')->constrained('users');
             $table->text('reason')->nullable();
             $table->timestamps();
         });

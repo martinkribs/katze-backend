@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -19,9 +20,6 @@ class Game extends Model
         'description',
         'role_configuration',
         'min_players',
-        'max_players',
-        'day_duration_minutes',
-        'night_duration_minutes',
         'is_private',
         'join_code',
         'status'
@@ -30,19 +28,40 @@ class Game extends Model
     protected $casts = [
         'role_configuration' => 'array',
         'is_private' => 'boolean',
-        'min_players' => 'integer',
-        'max_players' => 'integer',
-        'day_duration_minutes' => 'integer',
-        'night_duration_minutes' => 'integer',
     ];
 
-    // Default game configuration
-    protected static $defaultRoleDistribution = [
-        'Villager' => 5,
-        'Cat' => 2,
-        'Seer' => 1,
-        'Guardian' => 1
+    // Updated default minimum players
+    protected $attributes = [
+        'min_players' => 3,
     ];
+
+    // Improved role distribution strategy
+    protected static function calculateRoleDistribution(int $userCount): array
+    {
+        $roles = [
+            'Villager' => 0,
+            'Cat' => 0,
+            'Seer' => 0,
+            'Guardian' => 0,
+            'Werewolf' => 0
+        ];
+
+        // Basic role distribution logic
+        $roles['Villager'] = max(round($userCount * 0.6), 3); // At least 60% villagers, minimum 3
+        $roles['Werewolf'] = max(round($userCount * 0.2), 1); // Around 20% werewolves, at least 1
+        $roles['Seer'] = max(1, round($userCount * 0.1)); // At least 1 seer
+        $roles['Guardian'] = max(1, round($userCount * 0.1)); // At least 1 guardian
+        $roles['Cat'] = max(1, round($userCount * 0.1)); // At least 1 cat
+
+        // Ensure total roles match user count
+        $totalAssignedRoles = array_sum($roles);
+        if ($totalAssignedRoles > $userCount) {
+            // Adjust villagers to match exact user count
+            $roles['Villager'] -= ($totalAssignedRoles - $userCount);
+        }
+
+        return $roles;
+    }
 
     /**
      * Get the user that created the game.
@@ -53,11 +72,13 @@ class Game extends Model
     }
 
     /**
-     * Get the game instances for this game.
+     * Get the users in this game with their roles.
      */
-    public function gameInstances(): HasMany
+    public function users(): BelongsToMany
     {
-        return $this->hasMany(GameInstance::class);
+        return $this->belongsToMany(User::class, 'game_user_role')
+            ->withPivot('role_id', 'connection_status', 'user_status', 'is_game_master')
+            ->withTimestamps();
     }
 
     /**
@@ -69,38 +90,12 @@ class Game extends Model
     }
 
     /**
-     * Get all players across all game instances.
-     */
-    public function players()
-    {
-        return $this->hasManyThrough(Player::class, GameInstance::class);
-    }
-
-    /**
-     * Create a new game instance.
-     */
-    public function createInstance(): GameInstance
-    {
-        return $this->gameInstances()->create([
-            'status' => 'waiting',
-        ]);
-    }
-
-    /**
-     * Check if the game has reached its maximum number of players.
-     */
-    public function isFullyBooked(): bool
-    {
-        return $this->players()->count() >= $this->max_players;
-    }
-
-    /**
      * Check if the game can start.
      */
     public function canStart(): bool
     {
-        $playerCount = $this->players()->count();
-        return $playerCount >= $this->min_players && $playerCount <= $this->max_players;
+        $userCount = $this->users()->where('connection_status', 'joined')->count();
+        return $userCount >= $this->min_players;
     }
 
     /**
@@ -116,35 +111,12 @@ class Game extends Model
     }
 
     /**
-     * Validate role configuration.
-     */
-    public function validateRoleConfiguration(): bool
-    {
-        // If no role configuration is provided, use default
-        if (empty($this->role_configuration)) {
-            $this->role_configuration = $this->getDefaultRoleConfiguration();
-        }
-
-        $totalRoles = array_sum($this->role_configuration);
-        $minPlayers = $this->min_players;
-        $maxPlayers = $this->max_players;
-
-        return $totalRoles >= $minPlayers && $totalRoles <= $maxPlayers;
-    }
-
-    /**
-     * Get default role configuration based on player count.
+     * Get default role configuration based on user count.
      */
     public function getDefaultRoleConfiguration(): array
     {
-        $playerCount = $this->players()->count();
-        $distribution = self::$defaultRoleDistribution;
-
-        // Adjust role counts based on player count
-        if ($playerCount > 7) {
-            $distribution['Villager'] += 2;
-            $distribution['Cat'] += 1;
-        }
+        $userCount = $this->users()->where('connection_status', 'joined')->count();
+        $distribution = self::calculateRoleDistribution($userCount);
 
         return $this->mapRoleNamesToIds($distribution);
     }
@@ -165,36 +137,74 @@ class Game extends Model
     }
 
     /**
-     * Get the current active game instance.
+     * Start the game.
+     * 
+     * @return object Returns an object with game start information
      */
-    public function getCurrentInstance(): ?GameInstance
+    public function start(): object
     {
-        return $this->gameInstances()->where('status', 'in_progress')->first();
+        if (!$this->canStart()) {
+            return (object)[
+                'success' => false,
+                'message' => 'Cannot start game. Need at least ' . $this->min_players . ' users.'
+            ];
+        }
+
+        // Update game status
+        $this->status = 'in_progress';
+        $this->save();
+
+        // Assign roles to users
+        $this->assignRoles();
+
+        return (object)[
+            'success' => true,
+            'message' => 'Game started successfully',
+            'game_id' => $this->id
+        ];
     }
 
     /**
-     * Start the game with the current players.
+     * Assign roles to users in the game.
      */
-    public function start(): ?GameInstance
+    protected function assignRoles(): void
     {
-        if (!$this->canStart()) {
-            return null;
+        // Get joined users
+        $joinedUsers = $this->users()->where('connection_status', 'joined')->get();
+
+        // Prepare role configuration
+        $roleConfig = $this->role_configuration ?? $this->getDefaultRoleConfiguration();
+
+        // Shuffle users to randomize role assignment
+        $shuffledUsers = $joinedUsers->shuffle();
+
+        // Track assigned roles
+        $assignedRoles = [];
+
+        // Assign roles based on configuration
+        foreach ($roleConfig as $roleId => $count) {
+            for ($i = 0; $i < $count; $i++) {
+                if ($shuffledUsers->isEmpty()) break;
+
+                $user = $shuffledUsers->shift();
+                
+                // Update user's role in pivot table
+                $this->users()->updateExistingPivot($user->id, [
+                    'role_id' => $roleId,
+                    'user_status' => 'alive'
+                ]);
+
+                $assignedRoles[] = $user->id;
+            }
         }
 
-        $gameInstance = $this->createInstance();
-        
-        // Assign players to the game instance
-        $this->players()->update(['game_instance_id' => $gameInstance->id]);
-
-        // Validate and set role configuration
-        $this->validateRoleConfiguration();
-
-        // Assign roles
-        $gameInstance->assignRoles();
-
-        // Start the game
-        $gameInstance->start();
-
-        return $gameInstance;
+        // Assign remaining users as default role (typically Villager)
+        $defaultRoleId = Role::where('name', 'Villager')->first()->id;
+        foreach ($shuffledUsers as $user) {
+            $this->users()->updateExistingPivot($user->id, [
+                'role_id' => $defaultRoleId,
+                'user_status' => 'alive'
+            ]);
+        }
     }
 }

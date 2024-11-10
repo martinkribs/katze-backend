@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('actions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('round_id')->constrained('rounds');
-            $table->foreignId('executing_player_id')->constrained('players');
-            $table->foreignId('target_player_id')->constrained('players');
+            $table->foreignId('round_id')->constrained('voting_rounds');
+            $table->foreignId('executing_player_id')->constrained('users');
+            $table->foreignId('target_player_id')->constrained('users');
             $table->foreignId('action_type_id')->constrained('action_types');
             $table->foreignId('result_type_id')->nullable()->constrained('result_types');
             $table->text('action_notes')->nullable();

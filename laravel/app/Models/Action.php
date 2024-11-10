@@ -35,9 +35,9 @@ class Action extends Model
     /**
      * Get the player executing the action.
      */
-    public function executingPlayer(): BelongsTo
+    public function executingUser(): BelongsTo
     {
-        return $this->belongsTo(Player::class, 'executing_player_id');
+        return $this->belongsTo(User::class, 'executing_player_id');
     }
 
     /**
@@ -45,7 +45,7 @@ class Action extends Model
      */
     public function targetPlayer(): BelongsTo
     {
-        return $this->belongsTo(Player::class, 'target_player_id');
+        return $this->belongsTo(User::class, 'target_player_id');
     }
 
     /**

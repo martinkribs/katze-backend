@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('rounds', function (Blueprint $table) {
+        Schema::create('voting_rounds', function (Blueprint $table) {
             $table->id();
             $table->foreignId('game_id')->constrained('games');
             $table->integer('round_number');
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('rounds');
+        Schema::dropIfExists('voting_rounds');
     }
 };
