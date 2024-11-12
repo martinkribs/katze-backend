@@ -78,6 +78,21 @@ spec:
               value: "production"
             - name: APP_DEBUG
               value: "false"
+            - name: PUSHER_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: PUSHER_APP_ID
+            - name: PUSHER_APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: PUSHER_APP_KEY
+            - name: PUSHER_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: PUSHER_APP_SECRET
           volumeMounts:
             - name: app-storage
               mountPath: /var/www/laravel/app

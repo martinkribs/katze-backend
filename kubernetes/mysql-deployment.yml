@@ -32,6 +32,16 @@ spec:
                 secretKeyRef:
                   name: mysql-secrets
                   key: mysql-root-password
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_USERNAME
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASSWORD
           resources:
             limits:
               memory: "512Mi"
