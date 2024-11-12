@@ -20,7 +20,7 @@ spec:
         runAsUser: 1000
       containers:
         - name: meilisearch
-          image: getmeili/meilisearch:v1.11  # Specify version instead of latest
+          image: getmeili/meilisearch:v1.11
           ports:
             - containerPort: 7700
               name: http

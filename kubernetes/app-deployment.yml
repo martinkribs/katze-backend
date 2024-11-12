@@ -76,6 +76,8 @@ spec:
                   key: MEILISEARCH_KEY
             - name: APP_ENV
               value: "production"
+            - name: APP_DEBUG
+              value: "false"
           volumeMounts:
             - name: app-storage
               mountPath: /var/www/laravel/app

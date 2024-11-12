@@ -107,6 +107,10 @@ php artisan test
     # For each value you want to encode:
     echo -n "your-actual-value" | base64
     ```
+    Or on windows you can encode the secrets on PowerShell via
+    ```bash
+    [convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("your-actual-value"))
+    ```
 
 4. Apply the Kubernetes configurations in the following order:
 
