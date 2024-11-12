@@ -31,8 +31,8 @@ spec:
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: redis-secret
-                  key: password
+                  name: app-secrets
+                  key: REDIS_PASSWORD
           resources:
             limits:
               memory: "512Mi"

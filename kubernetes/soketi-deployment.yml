@@ -20,28 +20,30 @@ spec:
         runAsUser: 1000
       containers:
         - name: soketi
-          image: quay.io/soketi/soketi:1.4-16-debian  # Specify version instead of latest
+          image: quay.io/soketi/soketi:1.4-16-debian
           ports:
             - containerPort: 6001
               name: websocket
+            - containerPort: 9601
+              name: websocket-2
           env:
             - name: SOKETI_DEBUG
               value: "1"
             - name: SOKETI_DEFAULT_APP_ID
               valueFrom:
                 secretKeyRef:
-                  name: soketi-app-id
-                  key: password
+                  name: app-secrets
+                  key: SOKETI_DEFAULT_APP_ID
             - name: SOKETI_DEFAULT_APP_KEY
               valueFrom:
                 secretKeyRef:
-                  name: soketi-app-key
-                  key: password
+                  name: app-secrets
+                  key: SOKETI_DEFAULT_APP_KEY
             - name: SOKETI_DEFAULT_APP_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: soketi-app-secret
-                  key: password
+                  name: app-secrets
+                  key: SOKETI_DEFAULT_APP_SECRET
           resources:
             limits:
               memory: "256Mi"
@@ -71,7 +73,11 @@ spec:
   selector:
     app: soketi
   ports:
-    - name: websocket
+    - protocol: TCP
       port: 6001
+      name: websocket
       targetPort: 6001
-      protocol: TCP
+    - protocol: TCP
+      port: 9601
+      name: websocket-2
+      targetPort: 9601

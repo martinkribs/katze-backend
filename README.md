@@ -123,7 +123,6 @@ php artisan test
     c. Apply storage resources:
     ```bash
     kubectl apply -f kubernetes/pvc.yml
-    kubectl apply -f kubernetes/mailu-pvc.yml
     ```
 
     d. Apply Traefik configuration:

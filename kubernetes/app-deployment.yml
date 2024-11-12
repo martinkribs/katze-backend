@@ -43,18 +43,26 @@ spec:
             - name: DB_DATABASE
               value: "katze"
             - name: DB_USERNAME
-              value: "root"
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_USERNAME
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: mysql-secret
-                  key: password
+                  name: app-secrets
+                  key: DB_PASSWORD
             - name: REDIS_HOST
               value: "redis"
             - name: REDIS_PORT
               value: "6379"
             - name: REDIS_CLIENT
               value: "predis"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: REDIS_PASSWORD
             - name: CACHE_STORE
               value: "redis"
             - name: SESSION_DRIVER
@@ -67,7 +75,7 @@ spec:
                   name: app-secrets
                   key: MEILISEARCH_KEY
             - name: APP_ENV
-              value: "local"
+              value: "production"
           volumeMounts:
             - name: app-storage
               mountPath: /var/www/laravel/app
@@ -110,6 +118,10 @@ spec:
               periodSeconds: 20
       imagePullSecrets:
         - name: dockerconfigjson-github-com
+          valueFrom:
+                secretKeyRef:
+                  name: docker-secrets
+                  key: dockerconfigjson
       volumes:
         - name: app-storage
           persistentVolumeClaim:
