@@ -13,15 +13,12 @@ return new class extends Migration
     {
         Schema::create('game_invitations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('game_id')->constrained('games')->onDelete('cascade');
+            $table->foreignId('game_id')->unique()->constrained('games')->onDelete('cascade');
             $table->foreignId('invited_by')->constrained('users');
-            $table->foreignId('user_id')->constrained('users');
-            $table->enum('status', ['pending', 'accepted', 'declined', 'expired'])->default('pending');
+            $table->uuid('token')->unique();
+            $table->enum('status', ['active', 'expired'])->default('active');
             $table->timestamp('expires_at');
             $table->timestamps();
-
-            // Prevent duplicate invitations
-            $table->unique(['game_id', 'user_id']);
         });
     }
 

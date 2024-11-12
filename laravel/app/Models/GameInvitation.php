@@ -13,7 +13,7 @@ class GameInvitation extends Model
     protected $fillable = [
         'game_id',
         'invited_by',
-        'user_id',
+        'token',
         'status',
         'expires_at'
     ];
@@ -39,44 +39,46 @@ class GameInvitation extends Model
     }
 
     /**
-     * Get the user who was invited.
-     */
-    public function invitee(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
-    /**
      * Check if the invitation has expired.
      */
     public function hasExpired(): bool
     {
-        return $this->expires_at->isPast();
+        return $this->expires_at->isPast() || $this->status === 'expired';
     }
 
     /**
-     * Accept the invitation.
+     * Mark the invitation as expired.
      */
-    public function accept(): bool
+    public function markAsExpired(): void
     {
-        if ($this->hasExpired() || $this->status !== 'pending') {
-            return false;
-        }
-
-        if ($this->game->isFullyBooked()) {
-            $this->update(['status' => 'expired']);
-            return false;
-        }
-
-        $this->update(['status' => 'accepted']);
-        return true;
+        $this->update(['status' => 'expired']);
     }
 
     /**
-     * Decline the invitation.
+     * Get or create an active invitation for a game.
      */
-    public function decline(): void
+    public static function getOrCreateForGame(Game $game, int $invitedBy): self
     {
-        $this->update(['status' => 'declined']);
+        $invitation = self::where('game_id', $game->id)
+            ->where('status', 'active')
+            ->first();
+
+        if ($invitation && !$invitation->hasExpired()) {
+            return $invitation;
+        }
+
+        // If there's an expired invitation, mark it as expired
+        if ($invitation) {
+            $invitation->markAsExpired();
+        }
+
+        // Create new invitation
+        return self::create([
+            'game_id' => $game->id,
+            'invited_by' => $invitedBy,
+            'token' => \Illuminate\Support\Str::uuid(),
+            'status' => 'active',
+            'expires_at' => now()->addDays(1)
+        ]);
     }
 }

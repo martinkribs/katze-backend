@@ -43,16 +43,14 @@ class Game extends Model
             'Villager' => 0,
             'Cat' => 0,
             'Seer' => 0,
-            'Guardian' => 0,
-            'Werewolf' => 0
+            'Guardian' => 0
         ];
 
         // Basic role distribution logic
-        $roles['Villager'] = max(round($userCount * 0.6), 3); // At least 60% villagers, minimum 3
-        $roles['Werewolf'] = max(round($userCount * 0.2), 1); // Around 20% werewolves, at least 1
+        $roles['Villager'] = max(2, round($userCount * 0.1)); // At least 1 villager
+        $roles['Cat'] = max(round($userCount * 0.2), 1); // Around 20% cat, at least 1
         $roles['Seer'] = max(1, round($userCount * 0.1)); // At least 1 seer
         $roles['Guardian'] = max(1, round($userCount * 0.1)); // At least 1 guardian
-        $roles['Cat'] = max(1, round($userCount * 0.1)); // At least 1 cat
 
         // Ensure total roles match user count
         $totalAssignedRoles = array_sum($roles);

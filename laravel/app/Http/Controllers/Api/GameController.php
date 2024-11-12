@@ -43,7 +43,7 @@ class GameController extends Controller
                     'is_day' => true,
                     'join_code' => $request->is_private ? Game::generateJoinCode() : null,
                     'timezone' => $request->timezone,
-                    'status' => 'waiting'
+                    'status' => 'pending'
                 ]);
 
                 // Add game creator to game_user_role with game master status
@@ -57,8 +57,7 @@ class GameController extends Controller
 
             return response()->json([
                 'message' => 'Game created successfully',
-                'game' => $game->load('creator'),
-                'join_code' => $game->is_private ? $game->join_code : null
+                'gameId' => $game->id,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
@@ -117,6 +116,81 @@ class GameController extends Controller
     }
 
     /**
+     * Create or get an invitation link for the game.
+     */
+    public function createInviteLink(Game $game): JsonResponse
+    {
+        // Ensure only the game creator can create invite links
+        if ($game->created_by !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $invitation = GameInvitation::getOrCreateForGame($game, Auth::id());
+
+            return response()->json([
+                'message' => 'Invite link created successfully',
+                'token' => $invitation->token,
+                'invite_link' => url("/join-game/{$invitation->token}"), // Base path for deep linking
+                'expires_at' => $invitation->expires_at
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to create invite link',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Join a game via invitation token.
+     */
+    public function joinViaToken(string $token): JsonResponse
+    {
+        try {
+            return DB::transaction(function () use ($token) {
+                $invitation = GameInvitation::where('token', $token)
+                    ->where('status', 'active')
+                    ->first();
+
+                if (!$invitation) {
+                    return response()->json(['message' => 'Invalid invitation token'], 404);
+                }
+
+                if ($invitation->hasExpired()) {
+                    return response()->json(['message' => 'Invitation has expired'], 403);
+                }
+
+                $game = $invitation->game;
+                $user = Auth::user();
+
+                // Check if user is already in the game
+                if ($game->users()->where('user_id', $user->id)->exists()) {
+                    return response()->json(['message' => 'Already joined this game'], 400);
+                }
+
+                // Add user to game with joined status
+                $game->users()->attach($user->id, [
+                    'connection_status' => 'joined'
+                ]);
+
+                return response()->json([
+                    'message' => 'Successfully joined the game',
+                    'game' => [
+                        'id' => $game->id,
+                        'name' => $game->name
+                    ]
+                ]);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to join game',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Invite a user to the game.
      */
     public function invite(Request $request, Game $game): JsonResponse
@@ -130,11 +204,6 @@ class GameController extends Controller
             'user_id' => [
                 'required',
                 'exists:users,id',
-                // Prevent duplicate invitations
-                Rule::unique('game_invitations')->where(function ($query) use ($game) {
-                    return $query->where('game_id', $game->id)
-                                ->where('status', 'pending');
-                }),
                 // Prevent inviting if already in the game
                 function ($attribute, $value, $fail) use ($game) {
                     if ($game->users()->where('user_id', $value)->exists()) {
@@ -149,22 +218,13 @@ class GameController extends Controller
         }
 
         try {
-            $invitation = GameInvitation::create([
-                'game_id' => $game->id,
-                'invited_by' => Auth::id(),
-                'user_id' => $request->user_id,
-                'status' => 'pending',
-                'expires_at' => Carbon::now()->addDays(1)
-            ]);
-
             // Add user to game_user_role with invited status
             $game->users()->attach($request->user_id, [
                 'connection_status' => 'invited'
             ]);
 
             return response()->json([
-                'message' => 'Invitation sent successfully',
-                'invitation' => $invitation
+                'message' => 'Invitation sent successfully'
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -191,17 +251,15 @@ class GameController extends Controller
                 // For private games, verify invitation or join code
                 if ($game->is_private) {
                     $invitation = GameInvitation::where('game_id', $game->id)
-                        ->where('user_id', $user->id)
-                        ->where('status', 'pending')
+                        ->where('status', 'active')
                         ->first();
 
-                    if (!$invitation && $request->join_code !== $game->join_code) {
-                        return response()->json(['message' => 'Invalid invitation or join code'], 403);
+                    if (!$invitation || $invitation->hasExpired()) {
+                        return response()->json(['message' => 'Invalid or expired invitation'], 403);
                     }
 
-                    // Mark invitation as accepted if exists
-                    if ($invitation) {
-                        $invitation->update(['status' => 'accepted']);
+                    if ($request->token !== $invitation->token && $request->join_code !== $game->join_code) {
+                        return response()->json(['message' => 'Invalid token or join code'], 403);
                     }
                 }
 
@@ -234,8 +292,7 @@ class GameController extends Controller
                 $query->where('is_private', false)
                     ->orWhere('created_by', Auth::id())
                     ->orWhereHas('invitations', function ($subQuery) {
-                        $subQuery->where('user_id', Auth::id())
-                            ->where('status', 'pending');
+                        $subQuery->where('status', 'active');
                     });
             });
 

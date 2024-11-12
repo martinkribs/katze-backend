@@ -22,7 +22,7 @@ return new class extends Migration
             $table->boolean('is_private')->default(false);
             $table->boolean('is_day');
             $table->string('join_code')->nullable()->unique();
-            $table->enum('status', ['waiting', 'in_progress', 'completed', 'cancelled'])->default('waiting');
+            $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])->default('pending');
             $table->timestamps();
         });
     }

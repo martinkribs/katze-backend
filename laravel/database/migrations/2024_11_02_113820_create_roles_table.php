@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description');
-            $table->string('team'); // e.g., 'villagers', 'werewolves', 'neutral'
+            $table->string('team'); // e.g., 'villagers', 'cats', 'neutral'
             $table->boolean('can_use_night_action')->default(false);
             $table->timestamps();
         });

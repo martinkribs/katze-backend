@@ -53,6 +53,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/games/{game}/invite', [GameController::class, 'invite']);
     Route::post('/games/{game}/join', [GameController::class, 'join']);
     Route::post('/games/{game}/start', [GameController::class, 'start']);
+    Route::post('/games/{game}/invite-link', [GameController::class, 'createInviteLink']);
+    
+    // Join game via invitation token
+    Route::post('/join-game/{token}', [GameController::class, 'joinViaToken']);
 });
 
 Route::post('/logout', [ApiAuthenticatedSessionController::class, 'destroy'])
