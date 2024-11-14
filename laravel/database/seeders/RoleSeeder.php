@@ -14,57 +14,110 @@ class RoleSeeder extends Seeder
     {
         $roles = [
             [
-                'name' => 'Villager',
-                'description' => 'A regular villager. Your goal is to find and eliminate the Cats.',
+                'key' => 'villager',
                 'team' => 'villagers',
                 'can_use_night_action' => false,
             ],
             [
-                'name' => 'Cat',
-                'description' => 'Each night, work with other Cats to eliminate a villager.',
+                'key' => 'cat',
                 'team' => 'cats',
                 'can_use_night_action' => true,
             ],
             [
-                'name' => 'Guardian',
-                'description' => 'Each night, choose a player to protect from the Cats.',
+                'key' => 'serial_killer',
+                'team' => 'serial_killer',
+                'can_use_night_action' => true,
+            ],
+            [
+                'key' => 'amor',
                 'team' => 'villagers',
                 'can_use_night_action' => true,
             ],
             [
-                'name' => 'Seer',
-                'description' => 'Each night, investigate one player to learn if they are a Cat.',
-                'team' => 'villagers',
-                'can_use_night_action' => true,
-            ],
-            [
-                'name' => 'Doctor',
-                'description' => 'Once per game, you can revive an eliminated player during the night.',
-                'team' => 'villagers',
-                'can_use_night_action' => true,
-            ],
-            [
-                'name' => 'Medium',
-                'description' => 'When eliminated, you can continue to communicate with living players through visions.',
+                'key' => 'detective',
                 'team' => 'villagers',
                 'can_use_night_action' => false,
             ],
             [
-                'name' => 'Bodyguard',
-                'description' => 'Once per game, you can choose to protect yourself from elimination during the night.',
+                'key' => 'witch',
                 'team' => 'villagers',
                 'can_use_night_action' => true,
             ],
             [
-                'name' => 'Jester',
-                'description' => 'You win if you get eliminated by village vote. If eliminated by Cats, you join their team.',
+                'key' => 'hiv',
+                'team' => 'villagers',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'doctor',
+                'team' => 'villagers',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'mute',
+                'team' => 'villagers',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'peter',
+                'team' => 'villagers',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'pyro',
+                'team' => 'villagers',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'slut',
+                'team' => 'villagers',
+                'can_use_night_action' => true,
+            ],
+            [
+                'key' => 'seer',
+                'team' => 'villagers',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'traitor',
+                'team' => 'villagers',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'guard',
+                'team' => 'villagers',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'groupie',
+                'team' => 'villagers',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'executioner',
                 'team' => 'neutral',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'jester',
+                'team' => 'neutral',
+                'can_use_night_action' => false,
+            ],
+            [
+                'key' => 'king',
+                'team' => 'villagers',
                 'can_use_night_action' => false,
             ],
         ];
 
         foreach ($roles as $role) {
-            Role::create($role);
+            Role::create([
+                'key' => $role['key'],
+                'name' => $role['key'], // Key is used as name, translations handled via lang files
+                'description' => $role['key'], // Key is used as description, translations handled via lang files
+                'team' => $role['team'],
+                'can_use_night_action' => $role['can_use_night_action']
+            ]);
         }
     }
 }

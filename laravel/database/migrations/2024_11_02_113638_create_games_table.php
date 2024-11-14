@@ -23,6 +23,7 @@ return new class extends Migration
             $table->boolean('is_day');
             $table->string('join_code')->nullable()->unique();
             $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])->default('pending');
+            $table->enum('winning_team', ['villagers', 'cats', 'serial_killer'])->nullable();
             $table->timestamps();
         });
     }

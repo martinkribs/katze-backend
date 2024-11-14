@@ -13,6 +13,12 @@ class Game extends Model
 {
     use HasFactory;
 
+    // Team constants for win conditions
+    public const TEAM_VILLAGERS = 'villagers';
+    public const TEAM_CATS = 'cats';
+    public const TEAM_SERIAL_KILLER = 'serial_killer';
+    public const TEAM_LOVERS = 'lovers';
+
     protected $fillable = [
         'created_by',
         'timezone',
@@ -23,43 +29,138 @@ class Game extends Model
         'is_private',
         'is_day',
         'join_code',
-        'status'
+        'status',
+        'winning_team'
     ];
 
     protected $casts = [
         'role_configuration' => 'array',
         'is_private' => 'boolean',
+        'is_day' => 'boolean',
     ];
 
-    // Updated default minimum players
     protected $attributes = [
         'min_players' => 3,
     ];
 
-    // Improved role distribution strategy
+    /**
+     * Check if the game has ended and determine the winning team.
+     */
+    public function checkWinConditions(): bool
+    {
+        $alivePlayers = $this->users()
+            ->where('game_user_role.user_status', 'alive')
+            ->with('roles')
+            ->get();
+
+        $aliveVillagers = 0;
+        $aliveCats = 0;
+        $aliveSerialKiller = 0;
+        $aliveLovers = 0;
+        $totalAlive = $alivePlayers->count();
+
+        foreach ($alivePlayers as $player) {
+            $role = $player->roles->first();
+            
+            // Count players by team
+            if ($role->key === 'serial_killer') {
+                $aliveSerialKiller++;
+            } elseif ($role->team === self::TEAM_CATS) {
+                $aliveCats++;
+            } elseif ($role->team === self::TEAM_VILLAGERS) {
+                $aliveVillagers++;
+            }
+
+            // Check if player is part of lovers
+            if ($this->isPlayerLover($player->id)) {
+                $aliveLovers++;
+            }
+        }
+
+        // Serial Killer wins if they're the last one alive
+        if ($aliveSerialKiller > 0 && $totalAlive === 1) {
+            $this->endGame(self::TEAM_SERIAL_KILLER);
+            return true;
+        }
+
+        // Cats win if all villagers are dead (and serial killer)
+        if ($aliveCats > 0 && $aliveVillagers === 0 && $aliveSerialKiller === 0) {
+            $this->endGame(self::TEAM_CATS);
+            return true;
+        }
+
+        // Villagers win if all cats and serial killer are dead
+        if ($aliveVillagers > 0 && $aliveCats === 0 && $aliveSerialKiller === 0) {
+            $this->endGame(self::TEAM_VILLAGERS);
+            return true;
+        }
+
+        // Lovers win if they're the only ones alive
+        if ($aliveLovers === $totalAlive && $totalAlive === 2) {
+            $this->endGame(self::TEAM_LOVERS);
+            return true;
+        }
+        
+        return false;
+    }
+
+    /**
+     * End the game with a winning team
+     */
+    private function endGame(string $winningTeam): void
+    {
+        $this->status = 'completed';
+        $this->winning_team = $winningTeam;
+        $this->save();
+    }
+
+    /**
+     * Calculate role distribution based on player count
+     */
     protected static function calculateRoleDistribution(int $userCount): array
     {
         $roles = [
-            'Villager' => 0,
-            'Cat' => 0,
-            'Seer' => 0,
-            'Guardian' => 0
+            'villager' => 0,
+            'cat' => 0,
+            'serial_killer' => 1, // Always one serial killer
+            'seer' => 0,
+            'witch' => 0,
         ];
 
         // Basic role distribution logic
-        $roles['Villager'] = max(2, round($userCount * 0.1)); // At least 1 villager
-        $roles['Cat'] = max(round($userCount * 0.2), 1); // Around 20% cat, at least 1
-        $roles['Seer'] = max(1, round($userCount * 0.1)); // At least 1 seer
-        $roles['Guardian'] = max(1, round($userCount * 0.1)); // At least 1 guardian
-
-        // Ensure total roles match user count
+        $roles['cat'] = max(round($userCount * 0.2), 1); // Around 20% cats, at least 1
+        
+        // Fill remaining slots with villagers
         $totalAssignedRoles = array_sum($roles);
-        if ($totalAssignedRoles > $userCount) {
-            // Adjust villagers to match exact user count
-            $roles['Villager'] -= ($totalAssignedRoles - $userCount);
-        }
+        $roles['villager'] = max(0, $userCount - $totalAssignedRoles);
 
         return $roles;
+    }
+
+    /**
+     * Get default role configuration based on user count.
+     */
+    public function getDefaultRoleConfiguration(): array
+    {
+        $userCount = $this->users()->where('connection_status', 'joined')->count();
+        $distribution = self::calculateRoleDistribution($userCount);
+
+        return $this->mapRoleKeysToIds($distribution);
+    }
+
+    /**
+     * Map role keys to their corresponding database IDs.
+     */
+    private function mapRoleKeysToIds(array $roleKeys): array
+    {
+        $roles = Role::whereIn('key', array_keys($roleKeys))->get();
+        
+        $roleConfiguration = [];
+        foreach ($roles as $role) {
+            $roleConfiguration[$role->id] = $roleKeys[$role->key];
+        }
+
+        return $roleConfiguration;
     }
 
     /**
@@ -110,35 +211,7 @@ class Game extends Model
     }
 
     /**
-     * Get default role configuration based on user count.
-     */
-    public function getDefaultRoleConfiguration(): array
-    {
-        $userCount = $this->users()->where('connection_status', 'joined')->count();
-        $distribution = self::calculateRoleDistribution($userCount);
-
-        return $this->mapRoleNamesToIds($distribution);
-    }
-
-    /**
-     * Map role names to their corresponding database IDs.
-     */
-    private function mapRoleNamesToIds(array $roleNames): array
-    {
-        $roles = Role::whereIn('name', array_keys($roleNames))->get();
-        
-        $roleConfiguration = [];
-        foreach ($roles as $role) {
-            $roleConfiguration[$role->id] = $roleNames[$role->name];
-        }
-
-        return $roleConfiguration;
-    }
-
-    /**
      * Start the game.
-     * 
-     * @return object Returns an object with game start information
      */
     public function start(): object
     {
@@ -197,8 +270,8 @@ class Game extends Model
             }
         }
 
-        // Assign remaining users as default role (typically Villager)
-        $defaultRoleId = Role::where('name', 'Villager')->first()->id;
+        // Assign remaining users as default role (typically villager)
+        $defaultRoleId = Role::where('key', 'villager')->first()->id;
         foreach ($shuffledUsers as $user) {
             $this->users()->updateExistingPivot($user->id, [
                 'role_id' => $defaultRoleId,

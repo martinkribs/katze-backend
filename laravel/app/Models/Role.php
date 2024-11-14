@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\App;
 
 class Role extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'key',
         'name',
         'description',
         'team',
@@ -21,6 +23,24 @@ class Role extends Model
     protected $casts = [
         'can_use_night_action' => 'boolean'
     ];
+
+    /**
+     * Get the translated name of the role.
+     */
+    public function getTranslatedNameAttribute(): string
+    {
+        $locale = App::getLocale();
+        return __("roles.{$this->key}.name");
+    }
+
+    /**
+    * Get the translated description of the role.
+    */
+    public function getTranslatedDescriptionAttribute(): string
+    {
+        $locale = App::getLocale();
+        return __("roles.{$this->key}.description");
+    }
 
     /**
      * Get the players with this role.
