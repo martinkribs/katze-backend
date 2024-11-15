@@ -1,11 +1,7 @@
 <?php
 
-use App\Http\Controllers\Api\ApiAuthenticatedSessionController;
-use App\Http\Controllers\Api\ApiEmailVerificationNotificationController;
-use App\Http\Controllers\Api\ApiPasswordResetLinkController;
-use App\Http\Controllers\Api\ApiRegisteredUserController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\GameController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,37 +9,33 @@ use Illuminate\Support\Facades\Route;
 | API Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
+| Here is where you can register API routes for your application.
 |
 */
 
-
 // Auth routes
-Route::post('/register', [ApiRegisteredUserController::class, 'store'])
-    ->middleware('guest')
-    ->name('api.register');
-
-Route::post('/login', [ApiAuthenticatedSessionController::class, 'store'])
-    ->middleware('guest')
-    ->name('api.login');
-
-Route::post('/forgot-password', [ApiPasswordResetLinkController::class, 'store'])
-    ->middleware('guest')
-    ->name('api.password.email');
-
-Route::post('/email/verification-notification', [ApiEmailVerificationNotificationController::class, 'store'])
-    ->middleware(['auth:sanctum', 'throttle:6,1'])
-    ->name('api.verification.send');
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'auth'
+], function () {
+    Route::post('register', [AuthController::class, 'register']);
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('logout', [AuthController::class, 'logout']);
+    Route::post('refresh', [AuthController::class, 'refresh']);
+    Route::get('me', [AuthController::class, 'me']);
+    
+    // Email verification routes
+    Route::post('email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+    
+    Route::post('email/verify/resend', [AuthController::class, 'sendVerificationEmail'])
+        ->middleware(['throttle:6,1'])
+        ->name('verification.send');
+});
 
 // Game routes - protected by auth and email verification
-Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-    // User Info
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-
+Route::middleware(['auth:api', 'verified'])->group(function () {
     // Game management
     Route::get('/games', [GameController::class, 'index']);
     Route::post('/games', [GameController::class, 'create']);
@@ -58,7 +50,3 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Join game via invitation token
     Route::post('/join-game/{token}', [GameController::class, 'joinViaToken']);
 });
-
-Route::post('/logout', [ApiAuthenticatedSessionController::class, 'destroy'])
-    ->middleware('auth:sanctum')
-    ->name('api.logout');
