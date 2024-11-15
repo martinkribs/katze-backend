@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules;
+use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Carbon;
 
-class AuthController extends Controller
+class AuthController extends BaseController
 {
     /**
      * Create a new AuthController instance.
@@ -53,9 +55,9 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function login(): JsonResponse
+    public function login(Request $request): JsonResponse
     {
-        $credentials = request(['email', 'password']);
+        $credentials = $request->only(['email', 'password']);
 
         if (! $token = Auth::guard('api')->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
@@ -71,7 +73,13 @@ class AuthController extends Controller
      */
     public function me(): JsonResponse
     {
-        return response()->json(Auth::guard('api')->user());
+        $user = Auth::guard('api')->user();
+        
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        return response()->json($user);
     }
 
     /**
@@ -93,7 +101,12 @@ class AuthController extends Controller
      */
     public function refresh(): JsonResponse
     {
-        return $this->respondWithToken(Auth::guard('api')->refresh());
+        try {
+            $token = Auth::guard('api')->refresh();
+            return $this->respondWithToken($token);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Could not refresh token'], 401);
+        }
     }
 
     /**
@@ -105,30 +118,59 @@ class AuthController extends Controller
     {
         $user = Auth::guard('api')->user();
         
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         if ($user->hasVerifiedEmail()) {
             return response()->json(['message' => 'Email already verified'], 200);
         }
 
         $user->sendEmailVerificationNotification();
 
-        return response()->json(['message' => 'Verification link sent']);
+        return response()->json(['message' => 'Verification code sent to your email']);
     }
 
     /**
-     * Verify email address.
+     * Verify email address using verification code.
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function verifyEmail(Request $request): JsonResponse
     {
+        $request->validate([
+            'code' => ['required', 'string', 'size:6'],
+        ]);
+
         $user = Auth::guard('api')->user();
         
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         if ($user->hasVerifiedEmail()) {
             return response()->json(['message' => 'Email already verified']);
         }
 
+        // Check if verification code has expired
+        if ($user->email_verification_code_expires_at && 
+            Carbon::parse($user->email_verification_code_expires_at)->isPast()) {
+            return response()->json(['error' => 'Verification code has expired'], 400);
+        }
+
+        // Verify the code
+        if (!hash_equals($user->remember_token, hash('sha256', $request->code))) {
+            return response()->json(['error' => 'Invalid verification code'], 400);
+        }
+
         if ($user->markEmailAsVerified()) {
             event(new \Illuminate\Auth\Events\Verified($user));
+            
+            // Clear the verification code and expiration
+            $user->forceFill([
+                'remember_token' => null,
+                'email_verification_code_expires_at' => null
+            ])->save();
         }
 
         return response()->json(['message' => 'Email has been verified']);
@@ -145,6 +187,10 @@ class AuthController extends Controller
     {
         $user = Auth::guard('api')->user();
         
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',

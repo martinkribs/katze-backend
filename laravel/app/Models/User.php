@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Tymon\JWTAuth\Contracts\JWTSubject;
+use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 
 class User extends Authenticatable implements MustVerifyEmail, JWTSubject
@@ -45,6 +45,7 @@ class User extends Authenticatable implements MustVerifyEmail, JWTSubject
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'email_verification_code_expires_at' => 'datetime',
         ];
     }
 
@@ -83,6 +84,19 @@ class User extends Authenticatable implements MustVerifyEmail, JWTSubject
      */
     public function sendEmailVerificationNotification()
     {
-        $this->notify(new \Illuminate\Auth\Notifications\VerifyEmail);
+        $this->notify(new \App\Notifications\VerifyEmailNotification);
+    }
+
+    /**
+     * Force fill attributes on the model.
+     *
+     * @param  array  $attributes
+     * @return $this
+     */
+    public function forceFill(array $attributes)
+    {
+        return static::unguarded(function () use ($attributes) {
+            return $this->fill($attributes);
+        });
     }
 }

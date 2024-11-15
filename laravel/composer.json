@@ -9,7 +9,7 @@
         "dedoc/scramble": "^0.11.26",
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
-        "tymon/jwt-auth": "^2.1"
+        "php-open-source-saver/jwt-auth": "^2.7"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

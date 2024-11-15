@@ -25,8 +25,8 @@ Route::group([
     Route::get('me', [AuthController::class, 'me']);
     
     // Email verification routes
-    Route::post('email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
-        ->middleware(['signed', 'throttle:6,1'])
+    Route::post('email/verify', [AuthController::class, 'verifyEmail'])
+        ->middleware(['throttle:6,1'])
         ->name('verification.verify');
     
     Route::post('email/verify/resend', [AuthController::class, 'sendVerificationEmail'])
