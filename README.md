@@ -58,19 +58,7 @@ This is the backend for the Katze application, built with Laravel and deployed o
     php artisan db:seed
     ```
 
-9. Install npm packages:
-
-    ```bash
-    npm install
-    ```
-
-10. Build frontend:
-
-    ```bash
-    npm run build
-    ```
-
-11. Start the development server:
+09. Start the development server:
 
     ```bash
     php artisan serve

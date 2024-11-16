@@ -34,14 +34,14 @@ spec:
               memory: "256Mi"
               cpu: "250m"
           env:
-            - name: DB_CONNECTION
-              value: "mysql"
+            - name: APP_ENV
+              value: "production"
+            - name: APP_DEBUG
+              value: "false"
+            - name: APP_URL
+              value: "https://katze.app"
             - name: DB_HOST
               value: "mysql"
-            - name: DB_PORT
-              value: "3306"
-            - name: DB_DATABASE
-              value: "katze"
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -56,17 +56,27 @@ spec:
               value: "redis"
             - name: REDIS_PORT
               value: "6379"
-            - name: REDIS_CLIENT
-              value: "predis"
             - name: REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: REDIS_PASSWORD
-            - name: CACHE_STORE
-              value: "redis"
-            - name: SESSION_DRIVER
-              value: "redis"
+            - name: MAIL_HOST
+              value: "mailu.katze.app"
+            - name: MAIL_PORT
+              value: "587"
+            - name: MAIL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mailu-secrets
+                  key: postmaster
+            - name: MAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mailu-secrets
+                  key: admin-password
+            - name: MAIL_ENCRYPTION
+              value: "tls"
             - name: MEILISEARCH_HOST
               value: "https://meilisearch.katze.app:7700"
             - name: MEILISEARCH_KEY
@@ -74,10 +84,6 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: MEILISEARCH_KEY
-            - name: APP_ENV
-              value: "production"
-            - name: APP_DEBUG
-              value: "false"
             - name: PUSHER_APP_ID
               valueFrom:
                 secretKeyRef:
@@ -123,13 +129,13 @@ spec:
               subPath: laravel/bootstrap
           readinessProbe:
             httpGet:
-              path: /health
+              path: /api/health
               port: 9000
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
               httpGet:
-                path: /health
+                path: /api/health
                 port: 9000
               initialDelaySeconds: 15
               periodSeconds: 20

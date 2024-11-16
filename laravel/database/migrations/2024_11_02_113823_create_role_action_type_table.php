@@ -12,10 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('role_action_type', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
             $table->foreignId('action_type_id')->constrained('action_types')->onDelete('cascade');
-            $table->primary(['role_id', 'action_type_id']);
             $table->timestamps();
+
+            // Ensure unique combination of role and action type
+            $table->unique(['role_id', 'action_type_id']);
         });
     }
 

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Ensure unique combination of game and user
-            $table->unique(['game_id', 'user_id', 'role_id']);
+            $table->unique(['game_id', 'user_id']);
         });
     }
 

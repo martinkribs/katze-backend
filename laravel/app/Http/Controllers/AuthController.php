@@ -3,21 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\VerifyEmailRequest;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rules;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Carbon;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends BaseController
 {
     /**
      * Create a new AuthController instance.
-     *
-     * @return void
      */
     public function __construct()
     {
@@ -27,52 +30,74 @@ class AuthController extends BaseController
     /**
      * Register a new user.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @throws \Exception
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+        try {
+            /** @var array<string, mixed> */
+            $validated = $request->validated();
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+            /** @var User */
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
 
-        event(new Registered($user));
+            event(new Registered($user));
 
-        $token = Auth::guard('api')->login($user);
+            try {
+                /** @var string|null */
+                $token = Auth::guard('api')->login($user);
+                
+                if ($token === null) {
+                    throw new JWTException('Failed to create token');
+                }
 
-        return $this->respondWithToken($token);
+                return $this->respondWithToken($token);
+            } catch (JWTException $e) {
+                // If token creation fails, we still created the user, so return success with a message
+                return response()->json([
+                    'message' => 'User registered successfully but could not create token. Please try logging in.',
+                    'error' => $e->getMessage()
+                ], 201);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to register user',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * Get a JWT via given credentials.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @throws \Exception
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $credentials = $request->only(['email', 'password']);
+        try {
+            /** @var string|null */
+            $token = Auth::guard('api')->attempt($request->getCredentials());
 
-        if (! $token = Auth::guard('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            if ($token === null) {
+                return response()->json(['error' => 'Invalid credentials'], 401);
+            }
+
+            return $this->respondWithToken($token);
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Could not create token'], 500);
         }
-
-        return $this->respondWithToken($token);
     }
 
     /**
      * Get the authenticated User.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function me(): JsonResponse
     {
+        /** @var User|null */
         $user = Auth::guard('api')->user();
         
         if (!$user) {
@@ -84,38 +109,39 @@ class AuthController extends BaseController
 
     /**
      * Log the user out (Invalidate the token).
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
     public function logout(): JsonResponse
     {
-        Auth::guard('api')->logout();
-
-        return response()->json(['message' => 'Successfully logged out']);
+        try {
+            Auth::guard('api')->logout();
+            return response()->json(['message' => 'Successfully logged out']);
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Could not invalidate token'], 500);
+        }
     }
 
     /**
      * Refresh a token.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @throws \Exception
      */
     public function refresh(): JsonResponse
     {
         try {
-            $token = Auth::guard('api')->refresh();
+            /** @var string */
+            $token = JWTAuth::parseToken()->refresh();
             return $this->respondWithToken($token);
-        } catch (\Exception $e) {
+        } catch (JWTException $e) {
             return response()->json(['error' => 'Could not refresh token'], 401);
         }
     }
 
     /**
      * Resend email verification notification.
-     *
-     * @return \Illuminate\Http\JsonResponse
      */
-    public function sendVerificationEmail(Request $request): JsonResponse
+    public function sendVerificationEmail(): JsonResponse
     {
+        /** @var User|null */
         $user = Auth::guard('api')->user();
         
         if (!$user) {
@@ -134,14 +160,11 @@ class AuthController extends BaseController
     /**
      * Verify email address using verification code.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @throws \Exception
      */
-    public function verifyEmail(Request $request): JsonResponse
+    public function verifyEmail(VerifyEmailRequest $request): JsonResponse
     {
-        $request->validate([
-            'code' => ['required', 'string', 'size:6'],
-        ]);
-
+        /** @var User|null */
         $user = Auth::guard('api')->user();
         
         if (!$user) {
@@ -154,17 +177,17 @@ class AuthController extends BaseController
 
         // Check if verification code has expired
         if ($user->email_verification_code_expires_at && 
-            Carbon::parse($user->email_verification_code_expires_at)->isPast()) {
+            Carbon::parse((string)$user->email_verification_code_expires_at)->isPast()) {
             return response()->json(['error' => 'Verification code has expired'], 400);
         }
 
         // Verify the code
-        if (!hash_equals($user->remember_token, hash('sha256', $request->code))) {
+        if (!hash_equals((string)$user->remember_token, hash('sha256', $request->getVerificationCode()))) {
             return response()->json(['error' => 'Invalid verification code'], 400);
         }
 
         if ($user->markEmailAsVerified()) {
-            event(new \Illuminate\Auth\Events\Verified($user));
+            event(new Verified($user));
             
             // Clear the verification code and expiration
             $user->forceFill([
@@ -179,16 +202,16 @@ class AuthController extends BaseController
     /**
      * Get the token array structure.
      *
-     * @param  string $token
-     *
-     * @return \Illuminate\Http\JsonResponse
+     * @param string $token
+     * @throws JWTException
      */
-    protected function respondWithToken($token): JsonResponse
+    protected function respondWithToken(string $token): JsonResponse
     {
+        /** @var User|null */
         $user = Auth::guard('api')->user();
         
         if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            throw new JWTException('User not found after token creation');
         }
 
         return response()->json([

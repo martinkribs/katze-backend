@@ -1,50 +1,62 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Models\Game;
 use App\Models\GameInvitation;
 use App\Models\Role;
+use App\Http\Requests\Game\GameCreateRequest;
+use App\Http\Requests\Game\GameJoinRequest;
+use App\Http\Requests\Game\GameInviteRequest;
+use App\Http\Requests\Game\GameStartRequest;
+use App\Http\Requests\Game\GameIndexRequest;
+use App\Http\Requests\Game\GameShowRequest;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Routing\Controller as BaseController;
 
-class GameController
+class GameController extends BaseController
 {
+    use AuthorizesRequests, ValidatesRequests;
+
     /**
      * Create a new game.
+     *
+     * @throws \Exception
      */
-    public function create(Request $request): JsonResponse
+    public function create(GameCreateRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'is_private' => 'boolean',
-            'timezone' => 'required|string|max:50'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         try {
-            $game = DB::transaction(function () use ($request) {
+            $userId = Auth::id();
+            if ($userId === null) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            /** @var Game */
+            $game = DB::transaction(function () use ($request, $userId): Game {
+                /** @var array<string, mixed> */
+                $gameData = $request->getGameData();
+
+                /** @var Game */
                 $game = Game::create([
-                    'created_by' => Auth::id(),
-                    'name' => $request->name,
-                    'description' => $request->description,
+                    'created_by' => $userId,
+                    'name' => $gameData['name'],
+                    'description' => $gameData['description'],
                     'role_configuration' => '{}',
-                    'is_private' => $request->is_private ?? false,
+                    'is_private' => $gameData['is_private'],
                     'is_day' => true,
-                    'join_code' => $request->is_private ? Game::generateJoinCode() : null,
-                    'timezone' => $request->timezone,
+                    'join_code' => $gameData['is_private'] ? Game::generateJoinCode() : null,
+                    'timezone' => $gameData['timezone'],
                     'status' => 'pending'
                 ]);
 
                 // Add game creator to game_user_role with game master status
-                $game->users()->attach(Auth::id(), [
+                $game->users()->attach($userId, [
                     'connection_status' => 'joined',
                     'is_game_master' => true
                 ]);
@@ -66,28 +78,17 @@ class GameController
 
     /**
      * Start the game with role configuration.
+     *
+     * @throws \Exception
      */
-    public function start(Request $request, Game $game): JsonResponse
+    public function start(GameStartRequest $request, Game $game): JsonResponse
     {
-        // Ensure only the game creator can start the game
-        if ($game->created_by !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'role_configuration' => 'required|array',
-            'role_configuration.*' => 'integer|min:0'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         try {
-            return DB::transaction(function () use ($request, $game) {
+            /** @var JsonResponse */
+            return DB::transaction(function () use ($request, $game): JsonResponse {
                 // Update game with role configuration
                 $game->update([
-                    'role_configuration' => $request->role_configuration
+                    'role_configuration' => $request->getRoleConfiguration()
                 ]);
 
                 // Attempt to start the game
@@ -114,16 +115,23 @@ class GameController
 
     /**
      * Create or get an invitation link for the game.
+     *
+     * @throws \Exception
      */
     public function createInviteLink(Game $game): JsonResponse
     {
+        $userId = Auth::id();
+        if ($userId === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
         // Ensure only the game creator can create invite links
-        if ($game->created_by !== Auth::id()) {
+        if ($game->created_by !== $userId) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         try {
-            $invitation = GameInvitation::getOrCreateForGame($game, Auth::id());
+            $invitation = GameInvitation::getOrCreateForGame($game, $userId);
 
             return response()->json([
                 'message' => 'Invite link created successfully',
@@ -141,11 +149,14 @@ class GameController
 
     /**
      * Join a game via invitation token.
+     *
+     * @throws \Exception
      */
     public function joinViaToken(string $token): JsonResponse
     {
         try {
-            return DB::transaction(function () use ($token) {
+            /** @var JsonResponse */
+            return DB::transaction(function () use ($token): JsonResponse {
                 $invitation = GameInvitation::where('token', $token)
                     ->where('status', 'active')
                     ->first();
@@ -160,6 +171,10 @@ class GameController
 
                 $game = $invitation->game;
                 $user = Auth::user();
+                
+                if ($user === null) {
+                    return response()->json(['message' => 'Unauthorized'], 401);
+                }
 
                 // Check if user is already in the game
                 if ($game->users()->where('user_id', $user->id)->exists()) {
@@ -189,34 +204,14 @@ class GameController
 
     /**
      * Invite a user to the game.
+     *
+     * @throws \Exception
      */
-    public function invite(Request $request, Game $game): JsonResponse
+    public function invite(GameInviteRequest $request, Game $game): JsonResponse
     {
-        // Ensure only the game creator can invite
-        if ($game->created_by !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'user_id' => [
-                'required',
-                'exists:users,id',
-                // Prevent inviting if already in the game
-                function ($attribute, $value, $fail) use ($game) {
-                    if ($game->users()->where('user_id', $value)->exists()) {
-                        $fail('User is already in the game');
-                    }
-                }
-            ]
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
         try {
             // Add user to game_user_role with invited status
-            $game->users()->attach($request->user_id, [
+            $game->users()->attach($request->getUserId(), [
                 'connection_status' => 'invited'
             ]);
 
@@ -233,13 +228,19 @@ class GameController
 
     /**
      * Join a game.
+     *
+     * @throws \Exception
      */
-    public function join(Request $request, Game $game): JsonResponse
+    public function join(GameJoinRequest $request, Game $game): JsonResponse
     {
         $user = Auth::user();
+        if ($user === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
 
         try {
-            return DB::transaction(function () use ($game, $user, $request) {
+            /** @var JsonResponse */
+            return DB::transaction(function () use ($game, $user, $request): JsonResponse {
                 // Check if user is already in the game
                 if ($game->users()->where('user_id', $user->id)->exists()) {
                     return response()->json(['message' => 'Already joined this game'], 400);
@@ -247,6 +248,7 @@ class GameController
 
                 // For private games, verify invitation or join code
                 if ($game->is_private) {
+                    $credentials = $request->getJoinCredentials();
                     $invitation = GameInvitation::where('game_id', $game->id)
                         ->where('status', 'active')
                         ->first();
@@ -255,7 +257,7 @@ class GameController
                         return response()->json(['message' => 'Invalid or expired invitation'], 403);
                     }
 
-                    if ($request->token !== $invitation->token && $request->join_code !== $game->join_code) {
+                    if ($credentials['token'] !== $invitation->token && $credentials['join_code'] !== $game->join_code) {
                         return response()->json(['message' => 'Invalid token or join code'], 403);
                     }
                 }
@@ -280,28 +282,45 @@ class GameController
     /**
      * List available games.
      */
-    public function index(Request $request): JsonResponse
+    public function index(GameIndexRequest $request): JsonResponse
     {
-        $perPage = $request->input('per_page', 10);
-        $page = $request->input('page', 1);
+        $userId = Auth::id();
+        if ($userId === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
 
-        $query = Game::where(function ($query) {
+        $pagination = $request->getPaginationParams();
+        $filters = $request->getFilterParams();
+
+        $query = Game::where(function (Builder $query) use ($userId) {
                 $query->where('is_private', false)
-                    ->orWhere('created_by', Auth::id())
-                    ->orWhereHas('invitations', function ($subQuery) {
+                    ->orWhere('created_by', $userId)
+                    ->orWhereHas('invitations', function (Builder $subQuery) {
                         $subQuery->where('status', 'active');
                     });
             });
 
-        $games = $query->withCount('users')
-            ->paginate($perPage, ['*'], 'page', $page);
+        // Apply status filter
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
 
-        $transformedGames = $games->map(function ($game) {
+        // Apply search filter
+        if (!empty($filters['search'])) {
+            $query->where('name', 'like', '%' . $filters['search'] . '%');
+        }
+
+        $games = $query->withCount('users')
+            ->paginate($pagination['per_page'], ['*'], 'page', $pagination['page']);
+
+        $transformedGames = $games->map(function (Game $game) {
             return [
                 'id' => $game->id,
                 'name' => $game->name,
                 'status' => $game->status,
-                'playerCount' => $game->users_count
+                'playerCount' => $game->users_count,
+                'isPrivate' => $game->is_private,
+                'createdBy' => $game->created_by,
             ];
         });
 
@@ -319,30 +338,73 @@ class GameController
     /**
      * Get game details.
      */
-    public function show(Game $game): JsonResponse
+    public function show(GameShowRequest $request, Game $game): JsonResponse
     {
+        /** @var ?int */
+        $userId = Auth::id();
+        if ($userId === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
         // Find the current user's game role
         $userGameRole = $game->users()
-            ->where('user_id', Auth::id())
+            ->where('user_id', $userId)
             ->first();
 
         // Prepare players with detailed information
-        $players = $game->users->map(function ($user) {
+        $players = $game->users->map(function ($user) use ($game) {
             $pivot = $user->pivot;
+            $role = null;
+
+            if ($pivot->role_id) {
+                $role = Role::find($pivot->role_id);
+                // Only show role details if game is completed or user is game master
+                if ($game->status !== 'completed' && !$pivot->is_game_master) {
+                    $role = ['name' => 'Hidden'];
+                }
+            }
+
             return [
+                'id' => $user->id,
                 'name' => $user->name,
-                'role' => $pivot->role_id ? Role::find($pivot->role_id)->name : null,
-                'isGameMaster' => $pivot->is_game_master,
-                'userStatus' => $pivot->user_status
+                'role' => $role ? [
+                    'name' => $role->name,
+                    'team' => $game->status === 'completed' ? $role->team : null,
+                ] : null,
+                'isGameMaster' => (bool) $pivot->is_game_master,
+                'status' => [
+                    'connection' => $pivot->connection_status,
+                    'user' => $pivot->user_status,
+                ],
+                'joinedAt' => $pivot->created_at,
             ];
         });
 
         // Prepare response
         return response()->json([
+            'id' => $game->id,
             'name' => $game->name,
-            'isGameMaster' => $userGameRole ? $userGameRole->pivot->is_game_master : false,
+            'description' => $game->description,
+            'status' => $game->status,
+            'isPrivate' => $game->is_private,
+            'currentUserRole' => [
+                'isGameMaster' => $userGameRole ? (bool) $userGameRole->pivot->is_game_master : false,
+                'status' => $userGameRole ? [
+                    'connection' => $userGameRole->pivot->connection_status,
+                    'user' => $userGameRole->pivot->user_status,
+                ] : null,
+            ],
+            'gameDetails' => [
+                'isDay' => $game->is_day,
+                'timezone' => $game->timezone,
+                'createdAt' => $game->created_at,
+                'startedAt' => $game->started_at,
+                'completedAt' => $game->completed_at,
+                'winningTeam' => $game->status === 'completed' ? $game->winning_team : null,
+            ],
             'players' => $players,
-            'gameStatus' => $game->status,
+            'playerCount' => $players->count(),
+            'minPlayers' => $game->min_players,
         ]);
     }
 }

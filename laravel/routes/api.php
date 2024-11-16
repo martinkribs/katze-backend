@@ -1,7 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Api\GameController;
+use App\Http\Controllers\GameController;
+use App\Http\Controllers\HealthController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -12,6 +13,9 @@ use Illuminate\Support\Facades\Route;
 | Here is where you can register API routes for your application.
 |
 */
+
+// Health check route - publicly accessible
+Route::get('/health', [HealthController::class, 'check']);
 
 // Auth routes
 Route::group([

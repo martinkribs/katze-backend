@@ -3,10 +3,8 @@
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
-class LoginRequest extends FormRequest
+class VerifyEmailRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,8 +22,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
+            'code' => ['required', 'string', 'size:6'],
         ];
     }
 
@@ -37,19 +34,16 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required' => 'An email address is required',
-            'email.email' => 'Please provide a valid email address',
-            'password.required' => 'A password is required',
+            'code.required' => 'Verification code is required',
+            'code.size' => 'Verification code must be exactly 6 characters',
         ];
     }
 
     /**
-     * Get the credentials for authentication.
-     *
-     * @return array<string, string>
+     * Get the verification code.
      */
-    public function getCredentials(): array
+    public function getVerificationCode(): string
     {
-        return $this->only(['email', 'password']);
+        return $this->input('code');
     }
 }

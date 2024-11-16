@@ -26,7 +26,9 @@ RUN composer create-project --prefer-dist laravel/laravel:^10.0 laravel
 
 # Copy existing application directory contents
 COPY laravel /var/www/laravel
-COPY environment /var/www/laravel
+
+# Copy .env example file
+RUN cp /var/www/laravel/.env.example /var/www/laravel/.env
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/laravel \
