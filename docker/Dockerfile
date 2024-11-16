@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
 # Create Laravel project
-RUN composer create-project --prefer-dist laravel/laravel:^10.0 laravel
+RUN composer create-project --prefer-dist laravel/laravel:^11.0 laravel
 
 # Copy existing application directory contents
 COPY laravel /var/www/laravel
