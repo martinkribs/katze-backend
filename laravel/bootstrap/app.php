@@ -15,12 +15,14 @@ return Application::configure(basePath: dirname(__DIR__))
         // Middleware for API routes
         $middleware->group('api', [
             ThrottleRequests::class.':api',
-            SubstituteBindings::class
+            SubstituteBindings::class,
+            \Spatie\ResponseCache\Middlewares\CacheResponse::class
         ]);
 
         // Middleware aliases
         $middleware->alias([
-            'verified' => EnsureEmailIsVerified::class
+            'verified' => EnsureEmailIsVerified::class,
+            'doNotCacheResponse' => \Spatie\ResponseCache\Middlewares\DoNotCacheResponse::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

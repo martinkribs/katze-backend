@@ -19,7 +19,7 @@ Route::get('/health', [HealthController::class, 'check']);
 
 // Auth routes
 Route::group([
-    'middleware' => 'api',
+    'middleware' => ['api', 'doNotCacheResponse'],
     'prefix' => 'auth'
 ], function () {
     Route::post('register', [AuthController::class, 'register']);
@@ -40,17 +40,16 @@ Route::group([
 
 // Game routes - protected by auth and email verification
 Route::middleware(['auth:api', 'verified'])->group(function () {
-    // Game management
     Route::get('/games', [GameController::class, 'index']);
-    Route::post('/games', [GameController::class, 'create']);
     Route::get('/games/{game}', [GameController::class, 'show']);
     
     // Game participation
-    Route::post('/games/{game}/invite', [GameController::class, 'invite']);
-    Route::post('/games/{game}/join', [GameController::class, 'join']);
-    Route::post('/games/{game}/start', [GameController::class, 'start']);
-    Route::post('/games/{game}/invite-link', [GameController::class, 'createInviteLink']);
-    
-    // Join game via invitation token
-    Route::post('/join-game/{token}', [GameController::class, 'joinViaToken']);
+    Route::middleware('doNotCacheResponse')->group(function () {
+        Route::post('/games', [GameController::class, 'create']);
+        Route::post('/games/{game}/invite', [GameController::class, 'invite']);
+        Route::post('/games/{game}/join', [GameController::class, 'join']);
+        Route::post('/games/{game}/start', [GameController::class, 'start']);
+        Route::post('/games/{game}/invite-link', [GameController::class, 'createInviteLink']);
+        Route::post('/join-game/{token}', [GameController::class, 'joinViaToken']);
+    });
 });
