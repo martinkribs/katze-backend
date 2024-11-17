@@ -9,7 +9,7 @@ data:
       listen 80;
       server_name katze.app;
       
-      root /var/www/laravel/public;
+      root /var/www/katze/public;
       index index.php;
 
       # Security headers

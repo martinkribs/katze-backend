@@ -239,7 +239,7 @@ class ActionTypeSeeder extends Seeder
         ];
 
         foreach ($actionTypes as $type) {
-            ActionType::create($type);
+            ActionType::firstOrCreate(['name' => $type['name']], $type);
         }
     }
 }

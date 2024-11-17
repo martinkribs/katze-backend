@@ -33,14 +33,13 @@ spec:
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d
-            - name: app-public
-              mountPath: /var/www/laravel/public
-              subPath: laravel/public
+            - name: laravel-app
+              mountPath: /var/www/katze
       volumes:
         - name: nginx-config
           configMap:
             name: nginx-config
-        - name: app-public
+        - name: laravel-app
           persistentVolumeClaim:
             claimName: app-pvc
 ---

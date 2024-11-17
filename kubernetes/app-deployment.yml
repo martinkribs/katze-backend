@@ -24,8 +24,8 @@ spec:
             - containerPort: 9000
               name: fpm
           securityContext:
-            runAsUser: 0
-            runAsGroup: 0
+            runAsUser: 33
+            runAsGroup: 33
           resources:
             limits:
               memory: "512Mi"
@@ -100,9 +100,8 @@ spec:
                   name: app-secrets
                   key: SOKETI_DEFAULT_APP_SECRET
           volumeMounts:
-            - name: app-storage
-              mountPath: /var/www/laravel/storage
-              subPath: storage
+            - name: laravel-app
+              mountPath: /var/www/katze
           readinessProbe:
             tcpSocket:
               port: 9000
@@ -113,10 +112,17 @@ spec:
               port: 9000
             initialDelaySeconds: 15
             periodSeconds: 20
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - cp -r /var/www/laravel/. /var/www/katze
       imagePullSecrets:
         - name: docker-secrets
       volumes:
-        - name: app-storage
+        - name: laravel-app
           persistentVolumeClaim:
             claimName: app-pvc
 
