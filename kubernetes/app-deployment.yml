@@ -24,8 +24,8 @@ spec:
             - containerPort: 9000
               name: fpm
           securityContext:
-            runAsUser: 33
-            runAsGroup: 33
+            runAsUser: 0
+            runAsGroup: 0
           resources:
             limits:
               memory: "512Mi"
@@ -78,7 +78,7 @@ spec:
             - name: MAIL_ENCRYPTION
               value: "tls"
             - name: MEILISEARCH_HOST
-              value: "https://meilisearch.katze.app:7700"
+              value: "http://meilisearch:7700"
             - name: MEILISEARCH_KEY
               valueFrom:
                 secretKeyRef:
@@ -100,8 +100,12 @@ spec:
                   name: app-secrets
                   key: SOKETI_DEFAULT_APP_SECRET
           volumeMounts:
-            - name: laravel-app
-              mountPath: /var/www/katze
+            - name: app-pvc
+              mountPath: /katze
+          lifecycle:
+            postStart:
+              exec:
+                command: [ "/bin/sh", "-c", "cp -r /var/www/laravel/. /katze" ]
           readinessProbe:
             tcpSocket:
               port: 9000
@@ -112,17 +116,10 @@ spec:
               port: 9000
             initialDelaySeconds: 15
             periodSeconds: 20
-          lifecycle:
-            postStart:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - cp -r /var/www/laravel/. /var/www/katze
       imagePullSecrets:
         - name: docker-secrets
       volumes:
-        - name: laravel-app
+        - name: app-pvc
           persistentVolumeClaim:
             claimName: app-pvc
 

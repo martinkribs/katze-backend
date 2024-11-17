@@ -21,8 +21,6 @@ spec:
           ports:
             - containerPort: 80
               name: http
-            - containerPort: 443
-              name: https
           resources:
             requests:
               memory: "64Mi"
@@ -33,13 +31,13 @@ spec:
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d
-            - name: laravel-app
-              mountPath: /var/www/katze
+            - name: app-pvc
+              mountPath: /katze
       volumes:
         - name: nginx-config
           configMap:
             name: nginx-config
-        - name: laravel-app
+        - name: app-pvc
           persistentVolumeClaim:
             claimName: app-pvc
 ---
@@ -56,7 +54,3 @@ spec:
       port: 80
       name: http
       targetPort: 80
-    - protocol: TCP
-      port: 443
-      name: https
-      targetPort: 443
