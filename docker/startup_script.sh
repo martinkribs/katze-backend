@@ -1,10 +1,7 @@
 #!/bin/bash
 
-# Navigate to the project directory
-cd /var/www
-
 # Navigate to the Laravel project directory
-cd laravel
+cd /var/www/laravel
 
 # Check if application key exists and is not empty
 if grep -q "APP_KEY=" .env && grep -q "APP_KEY=base64:" .env; then
@@ -12,7 +9,7 @@ if grep -q "APP_KEY=" .env && grep -q "APP_KEY=base64:" .env; then
 else
     # Generate application key
     echo "No application key found. Generating."
-    php artisan key:generate
+    php artisan key:generate --force
 fi
 
 # Check if JWT secret exists and is not empty
@@ -24,15 +21,24 @@ else
     php artisan jwt:secret -f
 fi
 
-# Echo the Laravel information like version and environment
+# Echo the Laravel information
 php artisan --version
-php artisan env
 
-# Run database migrations
-php artisan migrate
+# Clear all caches first
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
 
-# Run database seeders
-php artisan db:seed
+# Run database migrations and seeds with force flag
+php artisan migrate --force
+php artisan db:seed --force
+
+# Cache for production
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan optimize
 
 # Start PHP-FPM
 php-fpm
