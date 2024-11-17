@@ -106,6 +106,11 @@ php artisan test
     [convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("your-actual-value"))
     ```
 
+   For the dockerconfigjson secret, you can encode your Docker Hub credentials:
+    ```bash
+    echo -n '{"auths":{"ghcr.io":{"auth":"your-base64-encoded-credentials"}}}' | base64
+    ```
+   
 4. Apply the Kubernetes configurations in the following order:
 
     a. Create namespace (if not exists):
