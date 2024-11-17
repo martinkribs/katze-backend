@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('games', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('created_by')->constrained('users');
-            $table->string('timezone', 50);
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->json('role_configuration');
-            $table->integer('min_players');
-            $table->boolean('is_private')->default(false);
-            $table->boolean('is_day');
-            $table->string('join_code')->nullable()->unique();
-            $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])->default('pending');
-            $table->enum('winning_team', ['villagers', 'cats', 'serial_killer','lovers'])->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('games')) {
+            Schema::create('games', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('created_by')->constrained('users');
+                $table->string('timezone', 50);
+                $table->string('name');
+                $table->text('description')->nullable();
+                $table->json('role_configuration');
+                $table->integer('min_players');
+                $table->boolean('is_private')->default(false);
+                $table->boolean('is_day');
+                $table->string('join_code')->nullable()->unique();
+                $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])->default('pending');
+                $table->enum('winning_team', ['villagers', 'cats', 'serial_killer', 'lovers'])->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

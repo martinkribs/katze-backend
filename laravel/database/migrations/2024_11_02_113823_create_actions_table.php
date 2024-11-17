@@ -11,17 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('actions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('round_id')->constrained('voting_rounds');
-            $table->foreignId('executing_player_id')->constrained('users');
-            $table->foreignId('target_player_id')->constrained('users');
-            $table->foreignId('action_type_id')->constrained('action_types');
-            $table->foreignId('result_type_id')->nullable()->constrained('result_types');
-            $table->text('action_notes')->nullable();
-            $table->boolean('is_successful')->default(true);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('actions')) {
+            Schema::create('actions', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('round_id')->constrained('voting_rounds');
+                $table->foreignId('executing_player_id')->constrained('users');
+                $table->foreignId('target_player_id')->constrained('users');
+                $table->foreignId('action_type_id')->constrained('action_types');
+                $table->foreignId('result_type_id')->nullable()->constrained('result_types');
+                $table->text('action_notes')->nullable();
+                $table->boolean('is_successful')->default(true);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

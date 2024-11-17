@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
-            $table->id();
-            $table->string('key')->unique();
-            $table->string('name');
-            $table->text('description');
-            $table->string('team'); // e.g., 'villagers', 'cats', 'neutral'
-            $table->boolean('can_use_night_action')->default(false);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('roles')) {
+            Schema::create('roles', function (Blueprint $table) {
+                $table->id();
+                $table->string('key')->unique();
+                $table->string('name');
+                $table->text('description');
+                $table->string('team'); // e.g., 'villagers', 'cats', 'neutral'
+                $table->boolean('can_use_night_action')->default(false);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

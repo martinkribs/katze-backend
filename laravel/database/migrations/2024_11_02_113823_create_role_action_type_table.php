@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('role_action_type', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
-            $table->foreignId('action_type_id')->constrained('action_types')->onDelete('cascade');
-            $table->timestamps();
+        if (!Schema::hasTable('role_action_type')) {
+            Schema::create('role_action_type', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
+                $table->foreignId('action_type_id')->constrained('action_types')->onDelete('cascade');
+                $table->timestamps();
 
-            // Ensure unique combination of role and action type
-            $table->unique(['role_id', 'action_type_id']);
-        });
+                // Ensure unique combination of role and action type
+                $table->unique(['role_id', 'action_type_id']);
+            });
+        }
     }
 
     /**

@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('votes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('round_id')->constrained('voting_rounds');
-            $table->foreignId('voter_id')->constrained('users');
-            $table->foreignId('target_id')->constrained('users');
-            $table->text('reason')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('votes')) {
+            Schema::create('votes', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('round_id')->constrained('voting_rounds');
+                $table->foreignId('voter_id')->constrained('users');
+                $table->foreignId('target_id')->constrained('users');
+                $table->text('reason')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

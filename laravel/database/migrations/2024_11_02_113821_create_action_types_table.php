@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('action_types', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->text('description');
-            $table->integer('usage_limit')->nullable();
-            $table->foreignId('result_type_id')->constrained('result_types');
-            $table->enum('target_type', ['single', 'multiple', 'self', 'none']);
-            $table->boolean('is_day_action')->default(true);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('action_types')) {
+            Schema::create('action_types', function (Blueprint $table) {
+                $table->id();
+                $table->string('name')->unique();
+                $table->text('description');
+                $table->integer('usage_limit')->nullable();
+                $table->foreignId('result_type_id')->constrained('result_types');
+                $table->enum('target_type', ['single', 'multiple', 'self', 'none']);
+                $table->boolean('is_day_action')->default(true);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

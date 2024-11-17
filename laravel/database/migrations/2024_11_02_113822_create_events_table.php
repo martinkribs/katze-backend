@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('events', function (Blueprint $table) {
-            $table->id();
-            $table->enum('event_name', ['Voting', 'Night Action', 'Discussion']);
-            $table->text('description')->nullable();
-            $table->integer('duration_minutes')->default(5);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('events')) {
+            Schema::create('events', function (Blueprint $table) {
+                $table->id();
+                $table->enum('event_name', ['Voting', 'Night Action', 'Discussion']);
+                $table->text('description')->nullable();
+                $table->integer('duration_minutes')->default(5);
+                $table->timestamps();
+            });
+        }
     }
 
     /**
