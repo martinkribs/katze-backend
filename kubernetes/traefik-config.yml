@@ -6,7 +6,7 @@ metadata:
 spec:
   valuesContent: |-
     additionalArguments:
-  - --certificatesresolvers.le-staging.acme.email=martin.kribs.mk@gmail.com
-  - --certificatesresolvers.le-staging.acme.storage=/data/acme-staging.json
-  - --certificatesresolvers.le-staging.acme.tlschallenge=true
-  - --certificatesresolvers.le-staging.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.le-staging.acme.email=martin.kribs.mk@gmail.com
+      - --certificatesresolvers.le-staging.acme.storage=/data/acme-staging.json
+      - --certificatesresolvers.le-staging.acme.tlschallenge=true
+      - --certificatesresolvers.le-staging.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory

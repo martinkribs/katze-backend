@@ -128,9 +128,10 @@ php artisan test
     kubectl apply -f kubernetes/pvc.yml
     ```
 
-    d. Apply Traefik configuration:
+    d. Apply Traefik and nginx configuration:
     ```bash
     kubectl apply -f kubernetes/traefik-config.yml
+    kubectl apply -f kubernetes/nginx-configmap.yml
     ```
 
     e. Apply core services and deployments:
@@ -142,7 +143,7 @@ php artisan test
     kubectl apply -f kubernetes/nginx-deployment.yml
     ```
 
-    f. Apply Mailu deployment:
+    f. Apply Mailu deployment (not yet implemented):
     ```bash
     kubectl apply -f kubernetes/mailu-deployment.yml
     ```

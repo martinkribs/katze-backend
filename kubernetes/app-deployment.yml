@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: katze-backend
-          image: ghcr.io/martinkribs/katze-backend:latest
+          image: ghcr.io/martinkribs/katze-backend:main
           imagePullPolicy: Always
           workingDir: /var/www/laravel
           ports:
