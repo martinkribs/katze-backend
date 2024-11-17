@@ -4,6 +4,7 @@ namespace App\Http\Requests\Game;
 
 use App\Models\Game;
 use App\Models\User;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -15,19 +16,19 @@ class GameInviteRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        /** @var Game */
+        /** @var Game $game */
         $game = $this->route('game');
-        
-        /** @var ?int */
+
+        /** @var ?int $userId */
         $userId = Auth::id();
-        
+
         return $userId !== null && $game->created_by === $userId;
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {

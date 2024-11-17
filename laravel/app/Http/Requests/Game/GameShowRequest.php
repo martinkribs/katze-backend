@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Game;
 
 use App\Models\Game;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
@@ -14,12 +15,12 @@ class GameShowRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        /** @var Game */
+        /** @var Game $game */
         $game = $this->route('game');
-        
-        /** @var ?int */
+
+        /** @var ?int $userId */
         $userId = Auth::id();
-        
+
         if ($userId === null) {
             return false;
         }
@@ -28,15 +29,15 @@ class GameShowRequest extends FormRequest
         // 1. Game is public
         // 2. User created the game
         // 3. User is a participant
-        return !$game->is_private || 
-               $game->created_by === $userId || 
+        return !$game->is_private ||
+               $game->created_by === $userId ||
                $game->users()->where('user_id', $userId)->exists();
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {

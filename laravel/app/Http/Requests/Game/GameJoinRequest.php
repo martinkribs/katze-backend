@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Game;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class GameJoinRequest extends FormRequest
@@ -17,12 +18,12 @@ class GameJoinRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
         $game = $this->route('game');
-        
+
         if ($game && $game->is_private) {
             return [
                 'token' => ['required_without:join_code', 'string', 'uuid'],

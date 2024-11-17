@@ -11,6 +11,7 @@ use App\Http\Requests\Game\GameInviteRequest;
 use App\Http\Requests\Game\GameStartRequest;
 use App\Http\Requests\Game\GameIndexRequest;
 use App\Http\Requests\Game\GameShowRequest;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -27,7 +28,7 @@ class GameController extends BaseController
     /**
      * Create a new game.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function create(GameCreateRequest $request): JsonResponse
     {
@@ -37,12 +38,12 @@ class GameController extends BaseController
                 return response()->json(['message' => 'Unauthorized'], 401);
             }
 
-            /** @var Game */
+            /** @var Game $game */
             $game = DB::transaction(function () use ($request, $userId): Game {
                 /** @var array<string, mixed> */
                 $gameData = $request->getGameData();
 
-                /** @var Game */
+                /** @var Game $game */
                 $game = Game::create([
                     'created_by' => $userId,
                     'name' => $gameData['name'],
@@ -68,7 +69,7 @@ class GameController extends BaseController
                 'message' => 'Game created successfully',
                 'gameId' => $game->id,
             ], 201);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Failed to create game',
                 'error' => $e->getMessage()
@@ -79,7 +80,7 @@ class GameController extends BaseController
     /**
      * Start the game with role configuration.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function start(GameStartRequest $request, Game $game): JsonResponse
     {
@@ -105,7 +106,7 @@ class GameController extends BaseController
                     'game_id' => $startResult->game_id
                 ]);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Failed to start game',
                 'error' => $e->getMessage()
@@ -116,7 +117,7 @@ class GameController extends BaseController
     /**
      * Create or get an invitation link for the game.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function createInviteLink(Game $game): JsonResponse
     {
@@ -139,7 +140,7 @@ class GameController extends BaseController
                 'invite_link' => url("/join-game/{$invitation->token}"), // Base path for deep linking
                 'expires_at' => $invitation->expires_at
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Failed to create invite link',
                 'error' => $e->getMessage()
@@ -150,7 +151,7 @@ class GameController extends BaseController
     /**
      * Join a game via invitation token.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function joinViaToken(string $token): JsonResponse
     {
@@ -171,7 +172,7 @@ class GameController extends BaseController
 
                 $game = $invitation->game;
                 $user = Auth::user();
-                
+
                 if ($user === null) {
                     return response()->json(['message' => 'Unauthorized'], 401);
                 }
@@ -194,7 +195,7 @@ class GameController extends BaseController
                     ]
                 ]);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Failed to join game',
                 'error' => $e->getMessage()
@@ -205,7 +206,7 @@ class GameController extends BaseController
     /**
      * Invite a user to the game.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function invite(GameInviteRequest $request, Game $game): JsonResponse
     {
@@ -218,7 +219,7 @@ class GameController extends BaseController
             return response()->json([
                 'message' => 'Invitation sent successfully'
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Failed to send invitation',
                 'error' => $e->getMessage()
@@ -229,7 +230,7 @@ class GameController extends BaseController
     /**
      * Join a game.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function join(GameJoinRequest $request, Game $game): JsonResponse
     {
@@ -271,7 +272,7 @@ class GameController extends BaseController
                     'message' => 'Successfully joined the game'
                 ]);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Failed to join game',
                 'error' => $e->getMessage()

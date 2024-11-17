@@ -6,12 +6,12 @@ use App\Models\User;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Requests\Auth\VerifyEmailRequest;
+use Exception;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Carbon;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -30,15 +30,14 @@ class AuthController extends BaseController
     /**
      * Register a new user.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function register(RegisterRequest $request): JsonResponse
     {
         try {
-            /** @var array<string, mixed> */
             $validated = $request->validated();
 
-            /** @var User */
+            /** @var User $user */
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -48,9 +47,9 @@ class AuthController extends BaseController
             event(new Registered($user));
 
             try {
-                /** @var string|null */
+                /** @var string|null $token */
                 $token = Auth::guard('api')->login($user);
-                
+
                 if ($token === null) {
                     throw new JWTException('Failed to create token');
                 }
@@ -63,7 +62,7 @@ class AuthController extends BaseController
                     'error' => $e->getMessage()
                 ], 201);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'Failed to register user',
                 'error' => $e->getMessage()
@@ -74,12 +73,11 @@ class AuthController extends BaseController
     /**
      * Get a JWT via given credentials.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function login(LoginRequest $request): JsonResponse
     {
         try {
-            /** @var string|null */
             $token = Auth::guard('api')->attempt($request->getCredentials());
 
             if ($token === null) {
@@ -95,11 +93,11 @@ class AuthController extends BaseController
     /**
      * Get the authenticated User.
      */
-    public function me(): JsonResponse
+    public function user(): JsonResponse
     {
-        /** @var User|null */
+        /** @var User|null $user */
         $user = Auth::guard('api')->user();
-        
+
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
@@ -123,12 +121,12 @@ class AuthController extends BaseController
     /**
      * Refresh a token.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function refresh(): JsonResponse
     {
         try {
-            /** @var string */
+            /** @var string $token */
             $token = JWTAuth::parseToken()->refresh();
             return $this->respondWithToken($token);
         } catch (JWTException $e) {
@@ -141,9 +139,9 @@ class AuthController extends BaseController
      */
     public function sendVerificationEmail(): JsonResponse
     {
-        /** @var User|null */
+        /** @var User|null $user */
         $user = Auth::guard('api')->user();
-        
+
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
@@ -160,13 +158,13 @@ class AuthController extends BaseController
     /**
      * Verify email address using verification code.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function verifyEmail(VerifyEmailRequest $request): JsonResponse
     {
-        /** @var User|null */
+        /** @var User|null $user */
         $user = Auth::guard('api')->user();
-        
+
         if (!$user) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
@@ -176,7 +174,7 @@ class AuthController extends BaseController
         }
 
         // Check if verification code has expired
-        if ($user->email_verification_code_expires_at && 
+        if ($user->email_verification_code_expires_at &&
             Carbon::parse((string)$user->email_verification_code_expires_at)->isPast()) {
             return response()->json(['error' => 'Verification code has expired'], 400);
         }
@@ -188,7 +186,7 @@ class AuthController extends BaseController
 
         if ($user->markEmailAsVerified()) {
             event(new Verified($user));
-            
+
             // Clear the verification code and expiration
             $user->forceFill([
                 'remember_token' => null,
@@ -203,13 +201,14 @@ class AuthController extends BaseController
      * Get the token array structure.
      *
      * @param string $token
+     * @return JsonResponse
      * @throws JWTException
      */
     protected function respondWithToken(string $token): JsonResponse
     {
-        /** @var User|null */
+        /** @var User|null $user */
         $user = Auth::guard('api')->user();
-        
+
         if (!$user) {
             throw new JWTException('User not found after token creation');
         }

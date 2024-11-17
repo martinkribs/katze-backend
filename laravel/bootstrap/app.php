@@ -6,6 +6,8 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Spatie\ResponseCache\Middlewares\CacheResponse;
+use Spatie\ResponseCache\Middlewares\DoNotCacheResponse;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,13 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->group('api', [
             ThrottleRequests::class.':api',
             SubstituteBindings::class,
-            \Spatie\ResponseCache\Middlewares\CacheResponse::class
+            CacheResponse::class
         ]);
 
         // Middleware aliases
         $middleware->alias([
             'verified' => EnsureEmailIsVerified::class,
-            'doNotCacheResponse' => \Spatie\ResponseCache\Middlewares\DoNotCacheResponse::class,
+            'doNotCacheResponse' => DoNotCacheResponse::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
