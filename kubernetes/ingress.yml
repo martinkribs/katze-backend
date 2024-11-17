@@ -25,7 +25,7 @@ spec:
               service:
                 name: nginx
                 port:
-                  number: 443
+                  number: 80
     - host: "meilisearch.katze.app"
       http:
         paths:

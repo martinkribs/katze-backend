@@ -128,17 +128,15 @@ spec:
               mountPath: /var/www/laravel/bootstrap
               subPath: laravel/bootstrap
           readinessProbe:
-            httpGet:
-              path: /api/health
+            tcpSocket:
               port: 9000
             initialDelaySeconds: 10
             periodSeconds: 10
           livenessProbe:
-              httpGet:
-                path: /api/health
-                port: 9000
-              initialDelaySeconds: 15
-              periodSeconds: 20
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 15
+            periodSeconds: 20
       imagePullSecrets:
         - name: docker-secrets
       volumes:
