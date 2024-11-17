@@ -13,11 +13,12 @@ return new class extends Migration
     {
         Schema::create('action_types', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name')->unique();
             $table->text('description');
             $table->integer('usage_limit')->nullable();
-            $table->enum('effect', ['kill', 'heal', 'protect', 'reveal', 'block', 'convert', 'other']);
+            $table->foreignId('result_type_id')->constrained('result_types');
             $table->enum('target_type', ['single', 'multiple', 'self', 'none']);
+            $table->boolean('is_day_action')->default(true);
             $table->timestamps();
         });
     }

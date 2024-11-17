@@ -111,13 +111,15 @@ class RoleSeeder extends Seeder
         ];
 
         foreach ($roles as $role) {
-            Role::create([
-                'key' => $role['key'],
-                'name' => $role['key'], // Key is used as name, translations handled via lang files
-                'description' => $role['key'], // Key is used as description, translations handled via lang files
-                'team' => $role['team'],
-                'can_use_night_action' => $role['can_use_night_action']
-            ]);
+            Role::firstOrCreate(
+                ['key' => $role['key']], // Search criteria
+                [
+                    'name' => $role['key'],
+                    'description' => $role['key'],
+                    'team' => $role['team'],
+                    'can_use_night_action' => $role['can_use_night_action']
+                ]
+            );
         }
     }
 }

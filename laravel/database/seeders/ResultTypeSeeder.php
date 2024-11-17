@@ -32,7 +32,7 @@ class ResultTypeSeeder extends Seeder
         ];
 
         foreach ($resultTypes as $type) {
-            ResultType::create($type);
+            ResultType::firstOrCreate(['result' => $type['result']], $type);
         }
     }
 }
