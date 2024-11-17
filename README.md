@@ -58,7 +58,13 @@ This is the backend for the Katze application, built with Laravel and deployed o
     php artisan db:seed
     ```
 
-09. Start the development server:
+9. Create a JWT secret:
+
+    ```bash
+    php artisan jwt:secret -f
+    ```
+   
+10. Start the development server:
 
     ```bash
     php artisan serve

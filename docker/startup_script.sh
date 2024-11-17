@@ -14,12 +14,25 @@ else
     echo "No application key found. Generating."
     php artisan key:generate
 fi
+
+# Check if JWT secret exists and is not empty
+if grep -q "^JWT_SECRET=[^[:space:]]*[^[:space:]]" .env; then
+    echo "JWT secret already exists. Skipping."
+else
+    # Generate JWT secret
+    echo "No JWT secret found. Generating."
+    php artisan jwt:secret -f
+fi
+
 # Echo the Laravel information like version and environment
 php artisan --version
 php artisan env
 
 # Run database migrations
 php artisan migrate
+
+# Run database seeders
+php artisan db:seed
 
 # Start PHP-FPM
 php-fpm
