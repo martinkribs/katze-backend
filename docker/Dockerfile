@@ -4,19 +4,22 @@ FROM php:8.3-fpm
 # Set the working directory in the container
 WORKDIR /var/www/laravel
 
-# Install dependencies
+# Install only necessary dependencies
 RUN apt-get update && apt-get install -y \
     libzip-dev \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libfreetype6-dev \
     libsodium-dev \
     libsodium23 \
-    libxml2-dev \
     zip \
     git \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) zip pdo pdo_mysql gd sodium simplexml
+    && docker-php-ext-install -j$(nproc) \
+        zip \
+        pdo \
+        pdo_mysql \
+        sodium \
+        mbstring
+
+# Install Redis extension
+RUN pecl install redis && docker-php-ext-enable redis
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer

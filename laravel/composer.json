@@ -12,6 +12,7 @@
         "ext-pdo": "*",
         "ext-sodium": "*",
         "ext-zip": "*",
+        "ext-redis": "*",
         "dedoc/scramble": "^0.11.26",
         "laravel/framework": "^11.9",
         "laravel/scout": "^10.11",
