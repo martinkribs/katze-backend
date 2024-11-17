@@ -101,32 +101,8 @@ spec:
                   key: SOKETI_DEFAULT_APP_SECRET
           volumeMounts:
             - name: app-storage
-              mountPath: /var/www/laravel/app
-              subPath: laravel/app
-            - name: app-storage
-              mountPath: /var/www/laravel/config
-              subPath: laravel/config
-            - name: app-storage
-              mountPath: /var/www/laravel/database
-              subPath: laravel/database
-            - name: app-storage
-              mountPath: /var/www/laravel/resources
-              subPath: laravel/resources
-            - name: app-storage
-              mountPath: /var/www/laravel/routes
-              subPath: laravel/routes
-            - name: app-storage
               mountPath: /var/www/laravel/storage
-              subPath: laravel/storage
-            - name: app-storage
-              mountPath: /var/www/laravel/tests
-              subPath: laravel/tests
-            - name: app-storage
-              mountPath: /var/www/laravel/lang
-              subPath: laravel/lang
-            - name: app-storage
-              mountPath: /var/www/laravel/bootstrap
-              subPath: laravel/bootstrap
+              subPath: storage
           readinessProbe:
             tcpSocket:
               port: 9000

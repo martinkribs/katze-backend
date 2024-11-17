@@ -2,7 +2,7 @@
 FROM php:8.3-fpm
 
 # Set the working directory in the container
-WORKDIR /var/www
+WORKDIR /var/www/laravel
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -21,30 +21,22 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
-# Create Laravel project
-RUN composer create-project --prefer-dist laravel/laravel:^11.0 laravel
-
-# Copy existing application directory contents
+# Copy the entire Laravel application
 COPY laravel /var/www/laravel
 
-# Copy .env example file
-RUN cp /var/www/laravel/.env.example /var/www/laravel/.env
+# Copy .env example file if .env doesn't exist
+COPY laravel/.env.example /var/www/laravel/.env
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/laravel \
-    && chmod -R 775 /var/www/laravel/storage
-
-# Remove the default Nginx index page
-RUN rm -rf /var/www/html
-
-# Create a symbolic link from the Nginx document root to the Laravel public directory
-RUN ln -s /var/www/laravel/public /var/www/html
-
-# Create a logs directory
-RUN mkdir /var/www/logs
+    && chmod -R 775 /var/www/laravel/storage \
+    && chmod -R 775 /var/www/laravel/bootstrap/cache
 
 # Install project dependencies
-RUN cd /var/www/laravel && composer install --no-interaction --no-dev --prefer-dist
+RUN composer install --no-interaction --no-dev --prefer-dist
+
+# Create a logs directory
+RUN mkdir -p /var/www/logs && chown -R www-data:www-data /var/www/logs
 
 # Expose port 9000
 EXPOSE 9000
