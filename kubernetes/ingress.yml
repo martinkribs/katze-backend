@@ -6,15 +6,12 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.tls.certresolver: le
-    traefik.ingress.kubernetes.io/router.middlewares: default-headers@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
     - hosts:
         - katze.app
         - meilisearch.katze.app
-        - mail.katze.app
-      secretName: katze-tls
   rules:
     - host: "katze.app"
       http:
@@ -36,13 +33,3 @@ spec:
                 name: meilisearch
                 port:
                   number: 7700
-    - host: "mail.katze.app"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: mailu
-                port:
-                  number: 80

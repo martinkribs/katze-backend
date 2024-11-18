@@ -5,33 +5,21 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
-    deployment:
+    persistence:
       enabled: true
-    ingressClass:
-      enabled: true
-      isDefaultClass: true
+      existingClaim: traefik-certificates
     ingressRoute:
       dashboard:
         enabled: false
     providers:
-      kubernetesCRD:
-        enabled: true
-        allowCrossNamespace: true
       kubernetesIngress:
         enabled: true
         allowExternalNameServices: true
         publishedService:
           enabled: true
+        allowCrossNamespace: true
     additionalArguments:
       - --certificatesresolvers.le.acme.email=martin.kribs.mk@gmail.com
       - --certificatesresolvers.le.acme.storage=/data/acme.json
       - --certificatesresolvers.le.acme.tlschallenge=true
       - --certificatesresolvers.le.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
-      - --providers.kubernetesIngress.allowCrossNamespace=true
-    ports:
-      web:
-        redirectTo: websecure
-      websecure:
-        tls:
-          enabled: true
-          certResolver: le
