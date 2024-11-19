@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: soketi
+  name: soketi-server
   namespace: katze-backend
   labels:
-    app: soketi
+    app: soketi-server
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: soketi
+      app: soketi-server
   template:
     metadata:
       labels:
-        app: soketi
+        app: soketi-server
     spec:
       securityContext:
         runAsNonRoot: true
@@ -29,6 +29,66 @@ spec:
           env:
             - name: SOKETI_DEBUG
               value: "1"
+            - name: MODE
+              value: "server"
+            - name: SOKETI_PORT
+              value: "6001"
+            - name: SOKETI_DEFAULT_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SOKETI_DEFAULT_APP_ID
+            - name: SOKETI_DEFAULT_APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SOKETI_DEFAULT_APP_KEY
+            - name: SOKETI_DEFAULT_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SOKETI_DEFAULT_APP_SECRET
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: soketi-worker
+  namespace: katze-backend
+  labels:
+    app: soketi-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: soketi-worker
+  template:
+    metadata:
+      labels:
+        app: soketi-worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: soketi
+          image: quay.io/soketi/soketi:1.4-16-debian
+          ports:
+            - containerPort: 9601
+              name: metrics
+          env:
+            - name: SOKETI_DEBUG
+              value: "1"
+            - name: MODE
+              value: "worker"
+            - name: SOKETI_PORT
+              value: "9601"
             - name: SOKETI_DEFAULT_APP_ID
               valueFrom:
                 secretKeyRef:
@@ -54,13 +114,13 @@ spec:
           readinessProbe:
             httpGet:
               path: /ready
-              port: 6001
+              port: 9601
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /health
-              port: 6001
+              path: /
+              port: 9601
             initialDelaySeconds: 15
             periodSeconds: 20
 ---
@@ -71,8 +131,16 @@ metadata:
   namespace: katze-backend
 spec:
   selector:
-    app: soketi
+    app: soketi-server
   ports:
+    - protocol: TCP
+      port: 6001
+      name: websocket
+      targetPort: 6001
+    - protocol: TCP
+      port: 9601
+      name: websocket-2
+      targetPort: 9601
     - protocol: TCP
       port: 6001
       name: websocket

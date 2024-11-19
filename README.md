@@ -141,6 +141,7 @@ php artisan test
     kubectl apply -f kubernetes/meilisearch-deployment.yml
     kubectl apply -f kubernetes/app-deployment.yml
     kubectl apply -f kubernetes/nginx-deployment.yml
+    kubectl apply -f kubernetes/soketi-deployment.yml
     ```
 
     f. Apply Mailu deployment (not yet implemented):
