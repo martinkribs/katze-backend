@@ -17,6 +17,12 @@ data:
       add_header X-XSS-Protection "1; mode=block";
       add_header X-Content-Type-Options "nosniff";
       
+      # Handle favicon.ico
+      location = /favicon.ico {
+        access_log off;
+        log_not_found off;
+      }
+      
       location / {
         try_files $uri $uri/ /index.php?$query_string;
       }
