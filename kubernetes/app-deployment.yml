@@ -107,11 +107,11 @@ spec:
               value: "https"
           volumeMounts:
             - name: app-pvc
-              mountPath: /katze
+              mountPath: /var/www/laravel/storage
           lifecycle:
             postStart:
               exec:
-                command: [ "/bin/sh", "-c", "cp -r /var/www/laravel/. /katze" ]
+                command: ["/bin/sh", "-c", "chown -R www-data:www-data /var/www/laravel/storage"]
           readinessProbe:
             tcpSocket:
               port: 9000

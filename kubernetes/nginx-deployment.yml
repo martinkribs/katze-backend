@@ -31,17 +31,12 @@ spec:
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d
-            - name: app-pvc
-              mountPath: /katze
             - name: nginx-logs
               mountPath: /var/log/nginx
       volumes:
         - name: nginx-config
           configMap:
             name: nginx-config
-        - name: app-pvc
-          persistentVolumeClaim:
-            claimName: app-pvc
         - name: nginx-logs
           emptyDir: {}
 ---
