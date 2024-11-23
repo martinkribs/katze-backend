@@ -25,14 +25,6 @@ class Action extends Model
     ];
 
     /**
-     * Get the round this action belongs to.
-     */
-    public function round(): BelongsTo
-    {
-        return $this->belongsTo(Round::class);
-    }
-
-    /**
      * Get the player executing the action.
      */
     public function executingUser(): BelongsTo

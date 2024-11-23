@@ -30,35 +30,6 @@ class GameStartRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'role_configuration' => ['required', 'array'],
-            'role_configuration.*' => ['integer', 'min:0'],
-        ];
-    }
-
-    /**
-     * Get custom messages for validator errors.
-     *
-     * @return array<string, string>
-     */
-    public function messages(): array
-    {
-        return [
-            'role_configuration.required' => 'Role configuration is required',
-            'role_configuration.array' => 'Role configuration must be an array',
-            'role_configuration.*.integer' => 'Role counts must be integers',
-            'role_configuration.*.min' => 'Role counts cannot be negative',
-        ];
-    }
-
-    /**
-     * Get the role configuration.
-     *
-     * @return array<int, int>
-     */
-    public function getRoleConfiguration(): array
-    {
-        /** @var array<int, int> */
-        return $this->input('role_configuration', []);
+        return [];
     }
 }

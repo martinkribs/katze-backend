@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Game;
 use App\Models\GameInvitation;
 use App\Models\Role;
+use App\Models\GameSetting;
 use App\Http\Requests\Game\GameCreateRequest;
 use App\Http\Requests\Game\GameJoinRequest;
 use App\Http\Requests\Game\GameInviteRequest;
 use App\Http\Requests\Game\GameStartRequest;
 use App\Http\Requests\Game\GameIndexRequest;
 use App\Http\Requests\Game\GameShowRequest;
+use App\Http\Requests\Game\GameSettingsRequest;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -48,12 +50,18 @@ class GameController extends BaseController
                     'created_by' => $userId,
                     'name' => $gameData['name'],
                     'description' => $gameData['description'],
-                    'role_configuration' => '{}',
                     'is_private' => $gameData['is_private'],
                     'is_day' => true,
                     'join_code' => $gameData['is_private'] ? Game::generateJoinCode() : null,
                     'timezone' => $gameData['timezone'],
                     'status' => 'pending'
+                ]);
+
+                // Create default settings
+                GameSetting::create([
+                    'game_id' => $game->id,
+                    'use_default' => true,
+                    'role_configuration' => $game->getDefaultRoleConfiguration()
                 ]);
 
                 // Add game creator to game_user_role with game master status
@@ -78,20 +86,114 @@ class GameController extends BaseController
     }
 
     /**
-     * Start the game with role configuration.
-     *
+     * Delete a game.
+     * 
+     * @throws Exception
+     */
+    public function delete(Game $game): JsonResponse
+    {
+        $userId = Auth::id();
+        if ($userId === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Check if user is game master
+        $userRole = $game->users()->where('user_id', $userId)->first();
+        if (!$userRole || !$userRole->pivot->is_game_master) {
+            return response()->json(['message' => 'Only game master can delete the game'], 403);
+        }
+
+        try {
+            DB::transaction(function () use ($game) {
+                // Delete related records first
+                $game->settings()->delete();
+                $game->users()->detach();
+                $game->invitations()->delete();
+                $game->delete();
+            });
+
+            return response()->json([
+                'message' => 'Game deleted successfully'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete game',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get game settings.
+     */
+    public function getSettings(Game $game): JsonResponse
+    {
+        $userId = Auth::id();
+        if ($userId === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Check if user is game master
+        $userRole = $game->users()->where('user_id', $userId)->first();
+        if (!$userRole || !$userRole->pivot->is_game_master) {
+            return response()->json(['message' => 'Only game master can view settings'], 403);
+        }
+
+        // Get or create settings
+        $settings = $game->settings ?? GameSetting::create([
+            'game_id' => $game->id,
+            'use_default' => true,
+            'role_configuration' => $game->getDefaultRoleConfiguration()
+        ]);
+
+        return response()->json([
+            'settings' => [
+                'use_default' => $settings->use_default,
+                'role_configuration' => $settings->role_configuration,
+                'effective_configuration' => $settings->getEffectiveConfiguration()
+            ]
+        ]);
+    }
+
+    /**
+     * Update game settings.
+     */
+    public function updateSettings(GameSettingsRequest $request, Game $game): JsonResponse
+    {
+        try {
+            $settingsData = $request->getSettingsData();
+            
+            // Update or create settings
+            $settings = $game->settings ?? new GameSetting(['game_id' => $game->id]);
+            $settings->fill($settingsData);
+            $settings->save();
+
+            return response()->json([
+                'message' => 'Settings updated successfully',
+                'settings' => [
+                    'use_default' => $settings->use_default,
+                    'role_configuration' => $settings->role_configuration,
+                    'effective_configuration' => $settings->getEffectiveConfiguration()
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update settings',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Start the game.
+     * 
      * @throws Exception
      */
     public function start(GameStartRequest $request, Game $game): JsonResponse
     {
         try {
             /** @var JsonResponse */
-            return DB::transaction(function () use ($request, $game): JsonResponse {
-                // Update game with role configuration
-                $game->update([
-                    'role_configuration' => $request->getRoleConfiguration()
-                ]);
-
+            return DB::transaction(function () use ($game): JsonResponse {
                 // Attempt to start the game
                 $startResult = $game->start();
 

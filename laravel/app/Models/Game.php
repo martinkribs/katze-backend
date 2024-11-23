@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class Game extends Model
@@ -24,7 +25,6 @@ class Game extends Model
         'timezone',
         'name',
         'description',
-        'role_configuration',
         'min_players',
         'is_private',
         'is_day',
@@ -34,7 +34,6 @@ class Game extends Model
     ];
 
     protected $casts = [
-        'role_configuration' => 'array',
         'is_private' => 'boolean',
         'is_day' => 'boolean',
     ];
@@ -42,6 +41,14 @@ class Game extends Model
     protected $attributes = [
         'min_players' => 3,
     ];
+
+    /**
+     * Get the settings for this game.
+     */
+    public function settings(): HasOne
+    {
+        return $this->hasOne(GameSetting::class);
+    }
 
     /**
      * Check if the game has ended and determine the winning team.
@@ -244,8 +251,14 @@ class Game extends Model
         // Get joined users
         $joinedUsers = $this->users()->where('connection_status', 'joined')->get();
 
-        // Prepare role configuration
-        $roleConfig = $this->role_configuration ?? $this->getDefaultRoleConfiguration();
+        // Get or create settings and get effective configuration
+        $settings = $this->settings ?? GameSetting::create([
+            'game_id' => $this->id,
+            'use_default' => true,
+            'role_configuration' => $this->getDefaultRoleConfiguration()
+        ]);
+        
+        $roleConfig = $settings->getEffectiveConfiguration();
 
         // Shuffle users to randomize role assignment
         $shuffledUsers = $joinedUsers->shuffle();

@@ -79,7 +79,7 @@ class HealthController extends BaseController
         try {
             $disk = Storage::disk('local');
             $key = 'health_check_' . time() . '.txt';
-            
+
             // Try to write and read
             $disk->put($key, 'health check');
             $content = $disk->get($key);
@@ -93,11 +93,7 @@ class HealthController extends BaseController
             return [
                 'status' => 'ok',
                 'message' => 'Storage is working properly',
-                'details' => [
-                    'total_space' => $this->formatBytes($totalSpace),
-                    'free_space' => $this->formatBytes($freeSpace),
-                    'used_space_percentage' => round($usedSpacePercentage, 2) . '%'
-                ]
+                'used_space_percentage' => round($usedSpacePercentage, 2) . '%'
             ];
         } catch (\Exception $e) {
             return [
@@ -113,8 +109,8 @@ class HealthController extends BaseController
         try {
             // Check if socket server is running on default port
             $connection = @fsockopen(
-                env('SOKETI_HOST', 'localhost'),
-                (int) env('SOKETI_PORT', 6001), // Cast port to integer
+                env('PUSHER_HOST', '127.0.0.1'),
+                (int) env('PUSHER_PORT', 6001), // Cast port to integer
                 $errno,
                 $errstr,
                 5
@@ -147,7 +143,7 @@ class HealthController extends BaseController
         try {
             $host = config('scout.meilisearch.host');
             $response = Http::get("$host/health");
-            
+
             if ($response->successful() && $response->json('status') === 'available') {
                 return [
                     'status' => 'ok',
@@ -167,16 +163,5 @@ class HealthController extends BaseController
                 'error' => $e->getMessage()
             ];
         }
-    }
-
-    private function formatBytes($bytes): string
-    {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
-        $bytes /= pow(1024, $pow);
-        
-        return round($bytes, 2) . ' ' . $units[$pow];
     }
 }
