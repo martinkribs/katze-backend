@@ -37,25 +37,23 @@ COPY laravel /var/www/laravel
 # Copy .env example file if .env doesn't exist
 COPY laravel/.env.example /var/www/laravel/.env
 
-# Set permissions and install dependencies
-RUN chown -R www-data:www-data /var/www/laravel \
+# Set up storage directory structure
+RUN mkdir -p /var/www/laravel/storage/app/public \
+    && mkdir -p /var/www/laravel/storage/framework/{cache,sessions,testing,views} \
+    && mkdir -p /var/www/laravel/storage/logs \
     && chmod -R 775 /var/www/laravel/storage \
-    && chmod -R 775 /var/www/laravel/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/laravel/storage
+
+# Set permissions and install dependencies
+RUN chmod -R 775 /var/www/laravel/bootstrap/cache \
     && composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader \
     && composer dump-autoload --optimize \
     && chown -R www-data:www-data /var/www/laravel
 
-# Create logs directory
-RUN mkdir -p /var/www/logs \
-    && chown -R www-data:www-data /var/www/logs
-
 # Remove composer and other build dependencies
 RUN rm -rf /usr/local/bin/composer \
     && rm -rf /var/www/laravel/.git \
-    && rm -rf /var/www/laravel/tests \
-    && rm -rf /var/www/laravel/storage/framework/cache/* \
-    && rm -rf /var/www/laravel/storage/framework/views/* \
-    && rm -rf /var/www/laravel/storage/framework/sessions/*
+    && rm -rf /var/www/laravel/tests
 
 # Configure PHP-FPM for production
 RUN echo "pm.max_children = 50" >> /usr/local/etc/php-fpm.d/www.conf \

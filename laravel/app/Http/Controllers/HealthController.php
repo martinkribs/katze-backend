@@ -114,7 +114,7 @@ class HealthController extends BaseController
             // Check if socket server is running on default port
             $connection = @fsockopen(
                 env('SOKETI_HOST', 'localhost'),
-                env('SOKETI_PORT', 6001),
+                (int) env('SOKETI_PORT', 6001), // Cast port to integer
                 $errno,
                 $errstr,
                 5
