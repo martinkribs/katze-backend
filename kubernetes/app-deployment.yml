@@ -99,6 +99,12 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: SOKETI_DEFAULT_APP_SECRET
+            - name: PUSHER_HOST
+              value: "soketi.katze.app"
+            - name: PUSHER_PORT
+              value: "443"
+            - name: PUSHER_SCHEME
+              value: "https"
           volumeMounts:
             - name: app-pvc
               mountPath: /katze

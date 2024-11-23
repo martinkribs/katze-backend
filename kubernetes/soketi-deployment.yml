@@ -25,7 +25,7 @@ spec:
             - containerPort: 6001
               name: websocket
             - containerPort: 9601
-              name: websocket-2
+              name: metrics
           env:
             - name: SOKETI_DEBUG
               value: "1"
@@ -139,13 +139,5 @@ spec:
       targetPort: 6001
     - protocol: TCP
       port: 9601
-      name: websocket-2
-      targetPort: 9601
-    - protocol: TCP
-      port: 6001
-      name: websocket
-      targetPort: 6001
-    - protocol: TCP
-      port: 9601
-      name: websocket-2
+      name: metrics
       targetPort: 9601

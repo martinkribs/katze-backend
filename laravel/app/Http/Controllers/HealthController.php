@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller as BaseController;
 
@@ -20,6 +21,7 @@ class HealthController extends BaseController
                 'cache' => $this->checkCache(),
                 'storage' => $this->checkStorage(),
                 'socket' => $this->checkSocket(),
+                'meilisearch' => $this->checkMeilisearch(),
             ]
         ];
 
@@ -135,6 +137,33 @@ class HealthController extends BaseController
             return [
                 'status' => 'error',
                 'message' => 'Socket check failed',
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    private function checkMeilisearch(): array
+    {
+        try {
+            $host = config('scout.meilisearch.host');
+            $response = Http::get("$host/health");
+            
+            if ($response->successful() && $response->json('status') === 'available') {
+                return [
+                    'status' => 'ok',
+                    'message' => 'Meilisearch is running and healthy'
+                ];
+            }
+
+            return [
+                'status' => 'error',
+                'message' => 'Meilisearch is not healthy',
+                'error' => 'Service reported unhealthy status'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Meilisearch check failed',
                 'error' => $e->getMessage()
             ];
         }

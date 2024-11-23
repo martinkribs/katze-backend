@@ -11,7 +11,6 @@ spec:
   tls:
     - hosts:
         - katze.app
-        - meilisearch.katze.app
         - soketi.katze.app
   rules:
     - host: "katze.app"
@@ -24,16 +23,6 @@ spec:
                 name: nginx
                 port:
                   number: 80
-    - host: "meilisearch.katze.app"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: meilisearch
-                port:
-                  number: 7700
     - host: "soketi.katze.app"
       http:
         paths:
