@@ -18,7 +18,6 @@ return new class extends Migration
                 $table->string('timezone', 50);
                 $table->string('name');
                 $table->text('description')->nullable();
-                $table->json('role_configuration');
                 $table->integer('min_players');
                 $table->boolean('is_private')->default(false);
                 $table->boolean('is_day');
