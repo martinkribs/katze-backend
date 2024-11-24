@@ -55,6 +55,7 @@ Route::middleware(['api', 'verified'])->group(function () {
 
     // Role routes
     Route::get('/roles', [RoleController::class, 'index']);
+    Route::get('/roles/{role}/action-types', [RoleController::class, 'getActionTypes']);
 
     // Game routes
     Route::get('/games', [GameController::class, 'index']);
@@ -72,5 +73,6 @@ Route::middleware(['api', 'verified'])->group(function () {
         Route::post('/games/{game}/invite-link', [GameController::class, 'createInviteLink']);
         Route::post('/join-game/{token}', [GameController::class, 'joinViaToken']);
         Route::delete('/games/{game}', [GameController::class, 'delete']);
+        Route::post('/games/{game}/action', [GameController::class, 'performAction']);
     });
 });

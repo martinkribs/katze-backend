@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             ResultTypeSeeder::class,
             ActionTypeSeeder::class,
+            RoleActionTypeSeeder::class,
         ]);
     }
 }

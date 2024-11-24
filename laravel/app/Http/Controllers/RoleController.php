@@ -13,7 +13,7 @@ class RoleController extends BaseController
      */
     public function index(): JsonResponse
     {
-        $roles = Role::all();
+        $roles = Role::with('actionTypes')->get();
         
         // Group roles by team
         $groupedRoles = $roles->groupBy('team')->map(function ($teamRoles) {
@@ -24,6 +24,16 @@ class RoleController extends BaseController
                     'name' => $role->name,
                     'description' => $role->description,
                     'can_use_night_action' => $role->can_use_night_action,
+                    'action_types' => $role->actionTypes->map(function ($actionType) {
+                        return [
+                            'id' => $actionType->id,
+                            'name' => $actionType->name,
+                            'description' => $actionType->description,
+                            'usage_limit' => $actionType->usage_limit,
+                            'target_type' => $actionType->target_type,
+                            'is_day_action' => $actionType->is_day_action,
+                        ];
+                    }),
                 ];
             });
         });
@@ -48,6 +58,33 @@ class RoleController extends BaseController
                     'description' => 'Have their own win conditions'
                 ]
             ]
+        ]);
+    }
+
+    /**
+     * Get action types for a specific role.
+     */
+    public function getActionTypes(Role $role): JsonResponse
+    {
+        $actionTypes = $role->actionTypes->map(function ($actionType) {
+            return [
+                'id' => $actionType->id,
+                'name' => $actionType->name,
+                'description' => $actionType->description,
+                'usage_limit' => $actionType->usage_limit,
+                'target_type' => $actionType->target_type,
+                'is_day_action' => $actionType->is_day_action,
+            ];
+        });
+
+        return response()->json([
+            'role' => [
+                'id' => $role->id,
+                'key' => $role->key,
+                'name' => $role->name,
+                'description' => $role->description,
+            ],
+            'action_types' => $actionTypes,
         ]);
     }
 }

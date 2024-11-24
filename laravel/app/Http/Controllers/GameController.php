@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\GameStarted;
 use App\Models\Game;
 use App\Models\GameInvitation;
 use App\Models\Role;
 use App\Models\GameSetting;
+use App\Models\Action;
 use App\Http\Requests\Game\GameCreateRequest;
 use App\Http\Requests\Game\GameJoinRequest;
 use App\Http\Requests\Game\GameInviteRequest;
@@ -14,9 +14,9 @@ use App\Http\Requests\Game\GameStartRequest;
 use App\Http\Requests\Game\GameIndexRequest;
 use App\Http\Requests\Game\GameShowRequest;
 use App\Http\Requests\Game\GameSettingsRequest;
+use App\Http\Requests\Game\GameActionRequest;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -495,25 +495,42 @@ class GameController extends BaseController
             ->first();
 
         // Prepare players with detailed information
-        $players = $game->users->map(function ($user) use ($game) {
+        $players = $game->users->map(function ($user) use ($game, $userId) {
             $pivot = $user->pivot;
             $role = null;
 
             if ($pivot->role_id) {
                 $role = Role::find($pivot->role_id);
-                // Only show role details if game is completed
-                if ($game->status !== 'completed') {
-                    $role = ['name' => 'Hidden', 'team' => null];
+                
+                // Determine role visibility:
+                // 1. If game is completed - show all roles
+                // 2. If current user - show their role
+                // 3. Otherwise - hide role
+                $shouldShowRole = $game->status === 'completed' || $user->id === $userId;
+                
+                if (!$shouldShowRole) {
+                    $role = [
+                        'id' => null,
+                        'name' => 'Hidden',
+                        'team' => null,
+                        'description' => null,
+                        'can_use_night_action' => null
+                    ];
+                } else {
+                    $role = [
+                        'id' => $role->id,
+                        'name' => $role->name,
+                        'team' => $role->team,
+                        'description' => $role->description,
+                        'can_use_night_action' => $role->can_use_night_action
+                    ];
                 }
             }
 
             return [
                 'id' => $user->id,
                 'name' => $user->name,
-                'role' => $role ? [
-                    'name' => $role['name'] ?? 'Hidden',
-                    'team' => $game->status === 'completed' ? ($role['team'] ?? null) : null,
-                ] : null,
+                'role' => $role,
                 'isGameMaster' => (bool) $pivot->is_game_master,
                 'status' => [
                     'connection' => $pivot->connection_status,
@@ -523,6 +540,41 @@ class GameController extends BaseController
             ];
         });
 
+        // Get available actions for current user if game is in progress
+        $availableActions = [];
+        if ($game->status === 'in_progress' && $userGameRole && $userGameRole->role_id) {
+            $role = Role::find($userGameRole->role_id);
+            if ($role) {
+                $availableActions = $role->actionTypes()
+                    ->where('is_day_action', $game->is_day)
+                    ->get()
+                    ->map(function ($actionType) {
+                        return [
+                            'id' => $actionType->id,
+                            'name' => $actionType->name,
+                            'description' => $actionType->description,
+                            'targetType' => $actionType->target_type,
+                            'usageLimit' => $actionType->usage_limit,
+                        ];
+                    });
+            }
+        }
+
+        // Get current user's role details
+        $currentUserRole = null;
+        if ($userGameRole && $userGameRole->role_id) {
+            $role = Role::find($userGameRole->role_id);
+            if ($role) {
+                $currentUserRole = [
+                    'id' => $role->id,
+                    'name' => $role->name,
+                    'team' => $role->team,
+                    'description' => $role->description,
+                    'can_use_night_action' => $role->can_use_night_action
+                ];
+            }
+        }
+
         // Prepare response
         return response()->json([
             'id' => $game->id,
@@ -530,12 +582,15 @@ class GameController extends BaseController
             'description' => $game->description,
             'status' => $game->status,
             'isPrivate' => $game->is_private,
-            'currentUserRole' => [
+            'currentUser' => [
+                'id' => $userId,
+                'role' => $currentUserRole,
                 'isGameMaster' => $userGameRole ? (bool) $userGameRole->pivot->is_game_master : false,
                 'status' => $userGameRole ? [
                     'connection' => $userGameRole->pivot->connection_status,
                     'user' => $userGameRole->pivot->user_status,
                 ] : null,
+                'availableActions' => $availableActions,
             ],
             'gameDetails' => [
                 'isDay' => $game->is_day,
@@ -549,5 +604,80 @@ class GameController extends BaseController
             'playerCount' => $players->count(),
             'minPlayers' => $game->min_players,
         ]);
+    }
+    
+    /**
+     * Perform an action in the game.
+     */
+    public function performAction(GameActionRequest $request, Game $game): JsonResponse
+    {
+        $userId = Auth::id();
+        if ($userId === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Verify game is in progress
+        if ($game->status !== 'in_progress') {
+            return response()->json(['message' => 'Game is not in progress'], 400);
+        }
+
+        // Get user's role
+        $userGameRole = $game->users()
+            ->where('user_id', $userId)
+            ->first();
+
+        if (!$userGameRole || !$userGameRole->role_id) {
+            return response()->json(['message' => 'User has no role in this game'], 403);
+        }
+
+        // Get action type from request
+        $actionType = $request->getActionType();
+        $targets = $request->getTargets();
+
+        // Verify user's role can perform this action
+        $role = Role::find($userGameRole->role_id);
+        if (!$role) {
+            return response()->json(['message' => 'Invalid role'], 500);
+        }
+
+        $canPerformAction = $role->actionTypes()
+            ->where('id', $actionType->id)
+            ->where('is_day_action', $game->is_day)
+            ->exists();
+
+        if (!$canPerformAction) {
+            return response()->json(['message' => 'Action not available for this role'], 403);
+        }
+
+        try {
+            // Create the action
+            $action = Action::create([
+                'round_id' => $game->current_round_id,
+                'executing_player_id' => $userId,
+                'target_player_id' => $targets[0] ?? null, // For single target actions
+                'action_type_id' => $actionType->id,
+                'result_type_id' => $actionType->result_type_id,
+                'action_notes' => json_encode($targets), // Store all targets in notes for multi-target actions
+                'is_successful' => true // Default to true, can be modified by interference
+            ]);
+
+            return response()->json([
+                'message' => 'Action performed successfully',
+                'action' => [
+                    'id' => $action->id,
+                    'type' => $actionType->name,
+                    'targets' => $targets,
+                    'resultType' => $action->resultType ? [
+                        'id' => $action->resultType->id,
+                        'name' => $action->resultType->name
+                    ] : null
+                ]
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to perform action',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
