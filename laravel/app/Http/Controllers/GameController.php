@@ -88,7 +88,7 @@ class GameController extends BaseController
 
     /**
      * Delete a game.
-     * 
+     *
      * @throws Exception
      */
     public function delete(Game $game): JsonResponse
@@ -126,7 +126,7 @@ class GameController extends BaseController
 
     /**
      * Leave a game.
-     * 
+     *
      * @throws Exception
      */
     public function leave(Game $game): JsonResponse
@@ -206,7 +206,7 @@ class GameController extends BaseController
     {
         try {
             $settingsData = $request->getSettingsData();
-            
+
             // Update or create settings
             $settings = $game->settings ?? new GameSetting(['game_id' => $game->id]);
             $settings->fill($settingsData);
@@ -230,7 +230,7 @@ class GameController extends BaseController
 
     /**
      * Start the game.
-     * 
+     *
      * @throws Exception
      */
     public function start(GameStartRequest $request, Game $game): JsonResponse
@@ -246,9 +246,6 @@ class GameController extends BaseController
                         'message' => $startResult->message
                     ], 400);
                 }
-
-                // Notify all players via socket that the game has started
-                broadcast(new GameStarted($game->id));
 
                 return response()->json([
                     'message' => $startResult->message,
@@ -430,7 +427,7 @@ class GameController extends BaseController
     }
 
     /**
-     * List available games.
+     * List games where user is a participant.
      */
     public function index(GameIndexRequest $request): JsonResponse
     {
@@ -442,13 +439,9 @@ class GameController extends BaseController
         $pagination = $request->getPaginationParams();
         $filters = $request->getFilterParams();
 
-        $query = Game::where(function (Builder $query) use ($userId) {
-                $query->where('is_private', false)
-                    ->orWhere('created_by', $userId)
-                    ->orWhereHas('invitations', function (Builder $subQuery) {
-                        $subQuery->where('status', 'active');
-                    });
-            });
+        $query = Game::whereHas('users', function (Builder $query) use ($userId) {
+            $query->where('user_id', $userId);
+        });
 
         // Apply status filter
         if (!empty($filters['status'])) {

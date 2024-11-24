@@ -70,6 +70,15 @@ This is the backend for the Katze application, built with Laravel and deployed o
     php artisan serve
     ```
 
+11. Start the queue worker in a separate terminal:
+
+    ```bash
+    cd laravel
+    php artisan queue:work
+    ```
+
+    > **Important**: The queue worker is required for processing events, notifications, and other background tasks. Without it running locally, features like WebSocket events won't work properly.
+
 The application should now be running at `http://localhost:8000`.
 
 ## Running Tests
@@ -142,6 +151,7 @@ php artisan test
     kubectl apply -f kubernetes/app-deployment.yml
     kubectl apply -f kubernetes/nginx-deployment.yml
     kubectl apply -f kubernetes/soketi-deployment.yml
+    kubectl apply -f kubernetes/queue-deployment.yml
     ```
 
     f. Apply Mailu deployment (not yet implemented):
@@ -172,6 +182,7 @@ This application relies on several services:
 - Meilisearch
 - Soketi (for WebSockets)
 - Mailu (for Email)
+- Queue Worker (for background tasks)
 
 Ensure these services are properly configured in your local and production environments.
 
@@ -179,5 +190,15 @@ Ensure these services are properly configured in your local and production envir
 
 If you encounter any issues, please check the logs:
 
-- For local development: `docker-compose logs`
-- For K3s deployment: `kubectl logs -n katze-backend <pod-name>`
+- For local development: 
+  - Application logs: `docker-compose logs`
+  - Queue worker logs: `tail -f laravel/storage/logs/laravel.log`
+- For K3s deployment: 
+  - Application logs: `kubectl logs -n katze-backend <app-pod-name>`
+  - Queue worker logs: `kubectl logs -n katze-backend <queue-worker-pod-name>`
+
+### Common Issues
+
+1. WebSocket events not working:
+   - For local development: Make sure you have the queue worker running (`php artisan queue:work`)
+   - For production: Check the queue worker pod logs (`kubectl logs -n katze-backend <queue-worker-pod-name>`)

@@ -16,12 +16,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Health check route - publicly accessible
-Route::get('/health', [HealthController::class, 'check']);
+Route::group(['middleware' => ['api']], function () {
+    // Health check route - publicly accessible
+    Route::get('/health', [HealthController::class, 'check']);
 
-// Translation routes - publicly accessible
-Route::get('/translations/{lang}', [TranslationController::class, 'get']);
-Route::get('/translations/{lang}/{namespace}', [TranslationController::class, 'get']);
+    // Translation routes - publicly accessible
+    Route::get('/translations/{lang}', [TranslationController::class, 'get']);
+    Route::get('/translations/{lang}/{namespace}', [TranslationController::class, 'get']);
+});
 
 // Auth routes
 Route::group([

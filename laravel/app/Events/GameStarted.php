@@ -43,4 +43,12 @@ class GameStarted implements ShouldBroadcast
             'message' => 'Game has started',
         ];
     }
+
+    /**
+     * The event's broadcast name.
+     */
+    public function broadcastAs(): string
+    {
+        return 'GameStarted';
+    }
 }

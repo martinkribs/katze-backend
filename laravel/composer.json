@@ -10,13 +10,15 @@
         "ext-mbstring": "*",
         "ext-openssl": "*",
         "ext-pdo": "*",
+        "ext-redis": "*",
         "ext-sodium": "*",
         "ext-zip": "*",
-        "ext-redis": "*",
         "dedoc/scramble": "^0.11.26",
         "laravel/framework": "^11.9",
         "laravel/scout": "^10.11",
+        "laravel/tinker": "^2.10",
         "php-open-source-saver/jwt-auth": "^2.7",
+        "pusher/pusher-php-server": "^7.2",
         "spatie/laravel-responsecache": "^7.4"
     },
     "require-dev": {

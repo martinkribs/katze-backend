@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: queue-worker
+  namespace: katze-backend
+  labels:
+    app: queue-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: queue-worker
+  template:
+    metadata:
+      labels:
+        app: queue-worker
+    spec:
+      containers:
+        - name: queue-worker
+          image: ghcr.io/martinkribs/katze-backend:main
+          imagePullPolicy: Always
+          workingDir: /var/www/laravel
+          command: ["php", "artisan", "queue:work", "--tries=3", "--backoff=3"]
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+          env:
+            - name: APP_ENV
+              value: "production"
+            - name: APP_DEBUG
+              value: "false"
+            - name: APP_URL
+              value: "https://katze.app"
+            - name: DB_HOST
+              value: "mysql"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASSWORD
+            - name: REDIS_HOST
+              value: "redis"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: REDIS_PASSWORD
+            - name: MAIL_HOST
+              value: "mailu.katze.app"
+            - name: MAIL_PORT
+              value: "587"
+            - name: MAIL_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MAIL_USERNAME
+            - name: MAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MAIL_PASSWORD
+            - name: MAIL_ENCRYPTION
+              value: "tls"
+            - name: MEILISEARCH_HOST
+              value: "http://meilisearch:7700"
+            - name: MEILISEARCH_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MEILISEARCH_KEY
+            - name: PUSHER_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SOKETI_DEFAULT_APP_ID
+            - name: PUSHER_APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SOKETI_DEFAULT_APP_KEY
+            - name: PUSHER_APP_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SOKETI_DEFAULT_APP_SECRET
+            - name: PUSHER_HOST
+              value: "soketi.katze.app"
+            - name: PUSHER_PORT
+              value: "443"
+            - name: PUSHER_SCHEME
+              value: "https"
+          volumeMounts:
+            - name: app-pvc
+              mountPath: /var/www/laravel/storage
+      imagePullSecrets:
+        - name: docker-secrets
+      volumes:
+        - name: app-pvc
+          persistentVolumeClaim:
+            claimName: app-pvc

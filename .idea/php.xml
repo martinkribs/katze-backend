@@ -262,6 +262,8 @@
       <path value="$PROJECT_DIR$/laravel/vendor/php-open-source-saver/jwt-auth" />
       <path value="$PROJECT_DIR$/laravel/vendor/laravel/scout" />
       <path value="$PROJECT_DIR$/laravel/vendor/lcobucci/jwt" />
+      <path value="$PROJECT_DIR$/laravel/vendor/pusher/pusher-php-server" />
+      <path value="$PROJECT_DIR$/laravel/vendor/paragonie/sodium_compat" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />

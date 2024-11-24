@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\GameStarted;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -236,6 +237,9 @@ class Game extends Model
 
         // Assign roles to users
         $this->assignRoles();
+
+        // Dispatch GameStarted event
+        event(new GameStarted($this->id));
 
         return (object)[
             'success' => true,
