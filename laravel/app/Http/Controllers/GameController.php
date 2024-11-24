@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\GameStarted;
 use App\Models\Game;
 use App\Models\GameInvitation;
 use App\Models\Role;
@@ -124,6 +125,49 @@ class GameController extends BaseController
     }
 
     /**
+     * Leave a game.
+     * 
+     * @throws Exception
+     */
+    public function leave(Game $game): JsonResponse
+    {
+        $userId = Auth::id();
+        if ($userId === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        try {
+            // Check if user is in the game
+            if (!$game->users()->where('user_id', $userId)->exists()) {
+                return response()->json(['message' => 'User is not in this game'], 404);
+            }
+
+            // Check if user is game master
+            $userRole = $game->users()->where('user_id', $userId)->first();
+            if ($userRole && $userRole->pivot->is_game_master) {
+                return response()->json(['message' => 'Game master cannot leave the game'], 403);
+            }
+
+            // Check if game is in progress
+            if ($game->status === 'in_progress') {
+                return response()->json(['message' => 'Cannot leave a game in progress'], 403);
+            }
+
+            // Remove user from game
+            $game->users()->detach($userId);
+
+            return response()->json([
+                'message' => 'Successfully left the game'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to leave game',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get game settings.
      */
     public function getSettings(Game $game): JsonResponse
@@ -202,6 +246,9 @@ class GameController extends BaseController
                         'message' => $startResult->message
                     ], 400);
                 }
+
+                // Notify all players via socket that the game has started
+                broadcast(new GameStarted($game->id));
 
                 return response()->json([
                     'message' => $startResult->message,
@@ -461,9 +508,9 @@ class GameController extends BaseController
 
             if ($pivot->role_id) {
                 $role = Role::find($pivot->role_id);
-                // Only show role details if game is completed or user is game master
-                if ($game->status !== 'completed' && !$pivot->is_game_master) {
-                    $role = ['name' => 'Hidden'];
+                // Only show role details if game is completed
+                if ($game->status !== 'completed') {
+                    $role = ['name' => 'Hidden', 'team' => null];
                 }
             }
 
@@ -471,8 +518,8 @@ class GameController extends BaseController
                 'id' => $user->id,
                 'name' => $user->name,
                 'role' => $role ? [
-                    'name' => $role->name,
-                    'team' => $game->status === 'completed' ? $role->team : null,
+                    'name' => $role['name'] ?? 'Hidden',
+                    'team' => $game->status === 'completed' ? ($role['team'] ?? null) : null,
                 ] : null,
                 'isGameMaster' => (bool) $pivot->is_game_master,
                 'status' => [

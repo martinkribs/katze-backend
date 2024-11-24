@@ -68,7 +68,7 @@ class Game extends Model
 
         foreach ($alivePlayers as $player) {
             $role = $player->roles->first();
-            
+
             // Count players by team
             if ($role->key === 'serial_killer') {
                 $aliveSerialKiller++;
@@ -107,7 +107,7 @@ class Game extends Model
             $this->endGame(self::TEAM_LOVERS);
             return true;
         }
-        
+
         return false;
     }
 
@@ -129,14 +129,14 @@ class Game extends Model
         $roles = [
             'villager' => 0,
             'cat' => 0,
-            'serial_killer' => 1, // Always one serial killer
+            'serial_killer' => 0,
             'seer' => 0,
             'witch' => 0,
         ];
 
         // Basic role distribution logic
         $roles['cat'] = max(round($userCount * 0.2), 1); // Around 20% cats, at least 1
-        
+
         // Fill remaining slots with villagers
         $totalAssignedRoles = array_sum($roles);
         $roles['villager'] = max(0, $userCount - $totalAssignedRoles);
@@ -161,7 +161,7 @@ class Game extends Model
     private function mapRoleKeysToIds(array $roleKeys): array
     {
         $roles = Role::whereIn('key', array_keys($roleKeys))->get();
-        
+
         $roleConfiguration = [];
         foreach ($roles as $role) {
             $roleConfiguration[$role->id] = $roleKeys[$role->key];
@@ -231,6 +231,7 @@ class Game extends Model
 
         // Update game status
         $this->status = 'in_progress';
+        $this->started_at = now();
         $this->save();
 
         // Assign roles to users
@@ -248,8 +249,8 @@ class Game extends Model
      */
     protected function assignRoles(): void
     {
-        // Get joined users
-        $joinedUsers = $this->users()->where('connection_status', 'joined')->get();
+        // Get all users including game master
+        $allUsers = $this->users()->where('connection_status', 'joined')->get();
 
         // Get or create settings and get effective configuration
         $settings = $this->settings ?? GameSetting::create([
@@ -257,11 +258,11 @@ class Game extends Model
             'use_default' => true,
             'role_configuration' => $this->getDefaultRoleConfiguration()
         ]);
-        
+
         $roleConfig = $settings->getEffectiveConfiguration();
 
         // Shuffle users to randomize role assignment
-        $shuffledUsers = $joinedUsers->shuffle();
+        $shuffledUsers = $allUsers->shuffle();
 
         // Track assigned roles
         $assignedRoles = [];
@@ -272,7 +273,7 @@ class Game extends Model
                 if ($shuffledUsers->isEmpty()) break;
 
                 $user = $shuffledUsers->shift();
-                
+
                 // Update user's role in pivot table
                 $this->users()->updateExistingPivot($user->id, [
                     'role_id' => $roleId,

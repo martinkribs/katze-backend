@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\TranslationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +19,10 @@ use Illuminate\Support\Facades\Route;
 // Health check route - publicly accessible
 Route::get('/health', [HealthController::class, 'check']);
 
+// Translation routes - publicly accessible
+Route::get('/translations/{lang}', [TranslationController::class, 'get']);
+Route::get('/translations/{lang}/{namespace}', [TranslationController::class, 'get']);
+
 // Auth routes
 Route::group([
     'middleware' => ['api', 'doNotCacheResponse']
@@ -26,6 +31,10 @@ Route::group([
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('token/refresh', [AuthController::class, 'refresh']);
+    Route::delete('user', [AuthController::class, 'delete']);
+    Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
 
     // Email verification routes
     Route::post('email/verify', [AuthController::class, 'verifyEmail'])
@@ -55,6 +64,7 @@ Route::middleware(['api', 'verified'])->group(function () {
         Route::post('/games', [GameController::class, 'create']);
         Route::post('/games/{game}/invite', [GameController::class, 'invite']);
         Route::post('/games/{game}/join', [GameController::class, 'join']);
+        Route::post('/games/{game}/leave', [GameController::class, 'leave']);
         Route::put('/games/{game}/settings', [GameController::class, 'updateSettings']);
         Route::post('/games/{game}/start', [GameController::class, 'start']);
         Route::post('/games/{game}/invite-link', [GameController::class, 'createInviteLink']);
