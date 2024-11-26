@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
 class Game extends Model
@@ -41,6 +42,16 @@ class Game extends Model
     protected $attributes = [
         'min_players' => 3,
     ];
+
+    /**
+     * Get the users in this game.
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'game_user_roles')
+            ->withPivot(['role_id', 'connection_status', 'user_status', 'affected_user', 'is_game_master'])
+            ->withTimestamps();
+    }
 
     /**
      * Get the settings for this game.

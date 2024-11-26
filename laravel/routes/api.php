@@ -68,6 +68,7 @@ Route::middleware(['api', 'verified'])->group(function () {
         Route::post('/games/{game}/invite', [GameController::class, 'invite']);
         Route::post('/games/{game}/join', [GameController::class, 'join']);
         Route::post('/games/{game}/leave', [GameController::class, 'leave']);
+        Route::post('/games/{game}/kick/{player}', [GameController::class, 'kick']);
         Route::put('/games/{game}/settings', [GameController::class, 'updateSettings']);
         Route::post('/games/{game}/start', [GameController::class, 'start']);
         Route::post('/games/{game}/invite-link', [GameController::class, 'createInviteLink']);

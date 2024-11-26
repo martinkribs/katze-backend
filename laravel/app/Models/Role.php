@@ -64,7 +64,9 @@ class Role extends Model
     public function actionTypes(): BelongsToMany
     {
         return $this->belongsToMany(ActionType::class, 'role_action_types')
-                    ->withTimestamps();
+                    ->withTimestamps()
+                    ->withPivot(['action_type_id'])  // Explicitly include pivot columns
+                    ->select('action_types.*');      // Explicitly select from action_types table
     }
 
     /**

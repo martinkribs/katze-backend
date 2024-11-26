@@ -56,21 +56,15 @@ class GameController extends BaseController
                     'is_day' => true,
                     'join_code' => $gameData['is_private'] ? Game::generateJoinCode() : null,
                     'timezone' => $gameData['timezone'],
-                    'status' => 'pending'
-                ]);
-
-                // Create default settings
-                GameSetting::create([
-                    'game_id' => $game->id,
-                    'use_default' => true,
-                    'role_configuration' => $game->getDefaultRoleConfiguration()
+                    'status' => 'pending',
+                    'min_players' => $gameData['min_players'] ?? 3
                 ]);
 
                 // Add game creator to game_user_role with game master status
                 GameUserRole::create([
                     'game_id' => $game->id,
                     'user_id' => $userId,
-                    'connection_status' => 'joined',
+                    'connection_status' => 'joined',  // Override default 'invited' status
                     'is_game_master' => true
                 ]);
 
@@ -130,6 +124,59 @@ class GameController extends BaseController
     }
 
     /**
+     * Kick a player from the game.
+     *
+     * @throws Exception
+     */
+    public function kick(Game $game, int $playerId): JsonResponse
+    {
+        $userId = Auth::id();
+        if ($userId === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        try {
+            // Check if user is game master
+            $userRole = GameUserRole::where('game_id', $game->id)
+                ->where('user_id', $userId)
+                ->first();
+            if (!$userRole || !$userRole->is_game_master) {
+                return response()->json(['message' => 'Only game master can kick players'], 403);
+            }
+
+            // Check if game is in progress
+            if ($game->status === 'in_progress') {
+                return response()->json(['message' => 'Cannot kick players during game'], 403);
+            }
+
+            // Check if player exists in game
+            $playerRole = GameUserRole::where('game_id', $game->id)
+                ->where('user_id', $playerId)
+                ->first();
+            if (!$playerRole) {
+                return response()->json(['message' => 'Player not found in game'], 404);
+            }
+
+            // Cannot kick game master
+            if ($playerRole->is_game_master) {
+                return response()->json(['message' => 'Cannot kick game master'], 403);
+            }
+
+            // Remove player from game
+            $playerRole->delete();
+
+            return response()->json([
+                'message' => 'Player kicked successfully'
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed to kick player',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Leave a game.
      *
      * @throws Exception
@@ -177,6 +224,11 @@ class GameController extends BaseController
 
     /**
      * Get game settings.
+     * 
+     * Returns the current game settings, including:
+     * - use_default: whether to use default role configuration
+     * - role_configuration: custom role configuration if not using default (as object)
+     * - effective_configuration: the actual role configuration that will be used
      */
     public function getSettings(Game $game): JsonResponse
     {
@@ -193,17 +245,31 @@ class GameController extends BaseController
             return response()->json(['message' => 'Only game master can view settings'], 403);
         }
 
-        // Get or create settings
-        $settings = $game->settings ?? GameSetting::create([
-            'game_id' => $game->id,
-            'use_default' => true,
-            'role_configuration' => $game->getDefaultRoleConfiguration()
-        ]);
+        // Get settings if they exist
+        $settings = $game->settings;
 
+        // If game hasn't started and no settings exist, return default configuration
+        if (!$settings && $game->status === 'pending') {
+            return response()->json([
+                'settings' => [
+                    'use_default' => true,
+                    'role_configuration' => new \stdClass(), // Empty object for Flutter
+                    'effective_configuration' => $game->getDefaultRoleConfiguration()
+                ]
+            ]);
+        }
+
+        // Convert role_configuration to object if it's null or empty array
+        $roleConfig = $settings->role_configuration;
+        if (empty($roleConfig)) {
+            $roleConfig = new \stdClass();
+        }
+
+        // If settings exist, return them along with the effective configuration
         return response()->json([
             'settings' => [
                 'use_default' => $settings->use_default,
-                'role_configuration' => $settings->role_configuration,
+                'role_configuration' => $roleConfig,
                 'effective_configuration' => $settings->getEffectiveConfiguration()
             ]
         ]);
@@ -211,11 +277,25 @@ class GameController extends BaseController
 
     /**
      * Update game settings.
+     * 
+     * Allows updating:
+     * - use_default: whether to use default role configuration
+     * - role_configuration: custom role configuration (used when use_default is false)
      */
     public function updateSettings(GameSettingsRequest $request, Game $game): JsonResponse
     {
         try {
+            // Only allow settings update if game hasn't started
+            if ($game->status !== 'pending') {
+                return response()->json(['message' => 'Cannot update settings after game has started'], 403);
+            }
+
             $settingsData = $request->getSettingsData();
+
+            // Ensure role_configuration is an object
+            if (empty($settingsData['role_configuration'])) {
+                $settingsData['role_configuration'] = new \stdClass();
+            }
 
             // Update or create settings
             $settings = $game->settings ?? new GameSetting(['game_id' => $game->id]);
@@ -226,7 +306,7 @@ class GameController extends BaseController
                 'message' => 'Settings updated successfully',
                 'settings' => [
                     'use_default' => $settings->use_default,
-                    'role_configuration' => $settings->role_configuration,
+                    'role_configuration' => $settings->role_configuration ?: new \stdClass(),
                     'effective_configuration' => $settings->getEffectiveConfiguration()
                 ]
             ]);
@@ -240,6 +320,9 @@ class GameController extends BaseController
 
     /**
      * Start the game.
+     * 
+     * Creates game settings with role configuration if they don't exist,
+     * then starts the game using the effective configuration.
      *
      * @throws Exception
      */
@@ -248,6 +331,15 @@ class GameController extends BaseController
         try {
             /** @var JsonResponse */
             return DB::transaction(function () use ($game): JsonResponse {
+                // Create settings with default role configuration if they don't exist
+                if (!$game->settings) {
+                    GameSetting::create([
+                        'game_id' => $game->id,
+                        'use_default' => true,
+                        'role_configuration' => new \stdClass() // Empty object for Flutter
+                    ]);
+                }
+
                 // Attempt to start the game
                 $startResult = $game->start();
 
@@ -344,7 +436,7 @@ class GameController extends BaseController
                 GameUserRole::create([
                     'game_id' => $game->id,
                     'user_id' => $user->id,
-                    'connection_status' => 'joined'
+                    'connection_status' => 'joined'  // Override default 'invited' status
                 ]);
 
                 return response()->json([
@@ -371,7 +463,7 @@ class GameController extends BaseController
     public function invite(GameInviteRequest $request, Game $game): JsonResponse
     {
         try {
-            // Add user to game_user_role with invited status
+            // Add user to game_user_role with invited status (uses default 'invited' status)
             GameUserRole::create([
                 'game_id' => $game->id,
                 'user_id' => $request->getUserId(),
@@ -431,7 +523,7 @@ class GameController extends BaseController
                 GameUserRole::create([
                     'game_id' => $game->id,
                     'user_id' => $user->id,
-                    'connection_status' => 'joined'
+                    'connection_status' => 'joined'  // Override default 'invited' status
                 ]);
 
                 return response()->json([
@@ -654,7 +746,7 @@ class GameController extends BaseController
 
         // Verify user's role can perform this action
         $canPerformAction = $userGameRole->role->actionTypes()
-            ->where('id', $actionType->id)
+            ->where('action_types.id', $actionType->id)  // Specify the table name
             ->where('is_day_action', $game->is_day)
             ->exists();
 

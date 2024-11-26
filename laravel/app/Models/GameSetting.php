@@ -22,7 +22,8 @@ class GameSetting extends Model
     ];
 
     protected $attributes = [
-        'use_default' => true
+        'use_default' => true,
+        'role_configuration' => '{}'  // Initialize as empty object instead of empty array
     ];
 
     /**
@@ -35,6 +36,8 @@ class GameSetting extends Model
 
     /**
      * Get the effective role configuration.
+     * If use_default is true, returns the game's default configuration.
+     * Otherwise, returns the custom role_configuration.
      */
     public function getEffectiveConfiguration(): array
     {
@@ -42,6 +45,6 @@ class GameSetting extends Model
             return $this->game->getDefaultRoleConfiguration();
         }
 
-        return $this->role_configuration;
+        return $this->role_configuration ?? [];
     }
 }
