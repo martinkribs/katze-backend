@@ -6,7 +6,6 @@ use App\Events\GameStarted;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
@@ -52,13 +51,21 @@ class Game extends Model
     }
 
     /**
+     * Get all game user roles for this game.
+     */
+    public function gameUserRoles(): HasMany
+    {
+        return $this->hasMany(GameUserRole::class);
+    }
+
+    /**
      * Check if the game has ended and determine the winning team.
      */
     public function checkWinConditions(): bool
     {
-        $alivePlayers = $this->users()
-            ->where('game_user_role.user_status', 'alive')
-            ->with('roles')
+        $alivePlayers = $this->gameUserRoles()
+            ->where('user_status', 'alive')
+            ->with('role')
             ->get();
 
         $aliveVillagers = 0;
@@ -68,7 +75,8 @@ class Game extends Model
         $totalAlive = $alivePlayers->count();
 
         foreach ($alivePlayers as $player) {
-            $role = $player->roles->first();
+            $role = $player->role;
+            if (!$role) continue;
 
             // Count players by team
             if ($role->key === 'serial_killer') {
@@ -80,7 +88,7 @@ class Game extends Model
             }
 
             // Check if player is part of lovers
-            if ($this->isPlayerLover($player->id)) {
+            if ($player->user_status === 'in_love') {
                 $aliveLovers++;
             }
         }
@@ -150,7 +158,7 @@ class Game extends Model
      */
     public function getDefaultRoleConfiguration(): array
     {
-        $userCount = $this->users()->where('connection_status', 'joined')->count();
+        $userCount = $this->gameUserRoles()->where('connection_status', 'joined')->count();
         $distribution = self::calculateRoleDistribution($userCount);
 
         return $this->mapRoleKeysToIds($distribution);
@@ -180,16 +188,6 @@ class Game extends Model
     }
 
     /**
-     * Get the users in this game with their roles.
-     */
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'game_user_role')
-            ->withPivot('role_id', 'connection_status', 'user_status', 'is_game_master')
-            ->withTimestamps();
-    }
-
-    /**
      * Get the invitations for this game.
      */
     public function invitations(): HasMany
@@ -202,7 +200,7 @@ class Game extends Model
      */
     public function canStart(): bool
     {
-        $userCount = $this->users()->where('connection_status', 'joined')->count();
+        $userCount = $this->gameUserRoles()->where('connection_status', 'joined')->count();
         return $userCount >= $this->min_players;
     }
 
@@ -254,7 +252,7 @@ class Game extends Model
     protected function assignRoles(): void
     {
         // Get all users including game master
-        $allUsers = $this->users()->where('connection_status', 'joined')->get();
+        $allGameUserRoles = $this->gameUserRoles()->where('connection_status', 'joined')->get();
 
         // Get or create settings and get effective configuration
         $settings = $this->settings ?? GameSetting::create([
@@ -266,7 +264,7 @@ class Game extends Model
         $roleConfig = $settings->getEffectiveConfiguration();
 
         // Shuffle users to randomize role assignment
-        $shuffledUsers = $allUsers->shuffle();
+        $shuffledGameUserRoles = $allGameUserRoles->shuffle();
 
         // Track assigned roles
         $assignedRoles = [];
@@ -274,24 +272,24 @@ class Game extends Model
         // Assign roles based on configuration
         foreach ($roleConfig as $roleId => $count) {
             for ($i = 0; $i < $count; $i++) {
-                if ($shuffledUsers->isEmpty()) break;
+                if ($shuffledGameUserRoles->isEmpty()) break;
 
-                $user = $shuffledUsers->shift();
+                $gameUserRole = $shuffledGameUserRoles->shift();
 
-                // Update user's role in pivot table
-                $this->users()->updateExistingPivot($user->id, [
+                // Update user's role
+                $gameUserRole->update([
                     'role_id' => $roleId,
                     'user_status' => 'alive'
                 ]);
 
-                $assignedRoles[] = $user->id;
+                $assignedRoles[] = $gameUserRole->user_id;
             }
         }
 
         // Assign remaining users as default role (typically villager)
         $defaultRoleId = Role::where('key', 'villager')->first()->id;
-        foreach ($shuffledUsers as $user) {
-            $this->users()->updateExistingPivot($user->id, [
+        foreach ($shuffledGameUserRoles as $gameUserRole) {
+            $gameUserRole->update([
                 'role_id' => $defaultRoleId,
                 'user_status' => 'alive'
             ]);

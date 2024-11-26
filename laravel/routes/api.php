@@ -73,6 +73,6 @@ Route::middleware(['api', 'verified'])->group(function () {
         Route::post('/games/{game}/invite-link', [GameController::class, 'createInviteLink']);
         Route::post('/join-game/{token}', [GameController::class, 'joinViaToken']);
         Route::delete('/games/{game}', [GameController::class, 'delete']);
-        Route::post('/games/{game}/action', [GameController::class, 'performAction']);
+        Route::post('/games/{game}/actions', [GameController::class, 'performAction']);
     });
 });

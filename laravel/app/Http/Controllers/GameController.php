@@ -7,6 +7,7 @@ use App\Models\GameInvitation;
 use App\Models\Role;
 use App\Models\GameSetting;
 use App\Models\Action;
+use App\Models\GameUserRole;
 use App\Http\Requests\Game\GameCreateRequest;
 use App\Http\Requests\Game\GameJoinRequest;
 use App\Http\Requests\Game\GameInviteRequest;
@@ -66,7 +67,9 @@ class GameController extends BaseController
                 ]);
 
                 // Add game creator to game_user_role with game master status
-                $game->users()->attach($userId, [
+                GameUserRole::create([
+                    'game_id' => $game->id,
+                    'user_id' => $userId,
                     'connection_status' => 'joined',
                     'is_game_master' => true
                 ]);
@@ -99,8 +102,10 @@ class GameController extends BaseController
         }
 
         // Check if user is game master
-        $userRole = $game->users()->where('user_id', $userId)->first();
-        if (!$userRole || !$userRole->pivot->is_game_master) {
+        $userRole = GameUserRole::where('game_id', $game->id)
+            ->where('user_id', $userId)
+            ->first();
+        if (!$userRole || !$userRole->is_game_master) {
             return response()->json(['message' => 'Only game master can delete the game'], 403);
         }
 
@@ -108,7 +113,7 @@ class GameController extends BaseController
             DB::transaction(function () use ($game) {
                 // Delete related records first
                 $game->settings()->delete();
-                $game->users()->detach();
+                GameUserRole::where('game_id', $game->id)->delete();
                 $game->invitations()->delete();
                 $game->delete();
             });
@@ -138,13 +143,16 @@ class GameController extends BaseController
 
         try {
             // Check if user is in the game
-            if (!$game->users()->where('user_id', $userId)->exists()) {
+            $userRole = GameUserRole::where('game_id', $game->id)
+                ->where('user_id', $userId)
+                ->first();
+            
+            if (!$userRole) {
                 return response()->json(['message' => 'User is not in this game'], 404);
             }
 
             // Check if user is game master
-            $userRole = $game->users()->where('user_id', $userId)->first();
-            if ($userRole && $userRole->pivot->is_game_master) {
+            if ($userRole->is_game_master) {
                 return response()->json(['message' => 'Game master cannot leave the game'], 403);
             }
 
@@ -154,7 +162,7 @@ class GameController extends BaseController
             }
 
             // Remove user from game
-            $game->users()->detach($userId);
+            $userRole->delete();
 
             return response()->json([
                 'message' => 'Successfully left the game'
@@ -178,8 +186,10 @@ class GameController extends BaseController
         }
 
         // Check if user is game master
-        $userRole = $game->users()->where('user_id', $userId)->first();
-        if (!$userRole || !$userRole->pivot->is_game_master) {
+        $userRole = GameUserRole::where('game_id', $game->id)
+            ->where('user_id', $userId)
+            ->first();
+        if (!$userRole || !$userRole->is_game_master) {
             return response()->json(['message' => 'Only game master can view settings'], 403);
         }
 
@@ -324,12 +334,16 @@ class GameController extends BaseController
                 }
 
                 // Check if user is already in the game
-                if ($game->users()->where('user_id', $user->id)->exists()) {
+                if (GameUserRole::where('game_id', $game->id)
+                    ->where('user_id', $user->id)
+                    ->exists()) {
                     return response()->json(['message' => 'Already joined this game'], 400);
                 }
 
                 // Add user to game with joined status
-                $game->users()->attach($user->id, [
+                GameUserRole::create([
+                    'game_id' => $game->id,
+                    'user_id' => $user->id,
                     'connection_status' => 'joined'
                 ]);
 
@@ -358,7 +372,9 @@ class GameController extends BaseController
     {
         try {
             // Add user to game_user_role with invited status
-            $game->users()->attach($request->getUserId(), [
+            GameUserRole::create([
+                'game_id' => $game->id,
+                'user_id' => $request->getUserId(),
                 'connection_status' => 'invited'
             ]);
 
@@ -389,7 +405,9 @@ class GameController extends BaseController
             /** @var JsonResponse */
             return DB::transaction(function () use ($game, $user, $request): JsonResponse {
                 // Check if user is already in the game
-                if ($game->users()->where('user_id', $user->id)->exists()) {
+                if (GameUserRole::where('game_id', $game->id)
+                    ->where('user_id', $user->id)
+                    ->exists()) {
                     return response()->json(['message' => 'Already joined this game'], 400);
                 }
 
@@ -410,7 +428,9 @@ class GameController extends BaseController
                 }
 
                 // Add user to game with joined status
-                $game->users()->attach($user->id, [
+                GameUserRole::create([
+                    'game_id' => $game->id,
+                    'user_id' => $user->id,
                     'connection_status' => 'joined'
                 ]);
 
@@ -490,23 +510,55 @@ class GameController extends BaseController
         }
 
         // Find the current user's game role
-        $userGameRole = $game->users()
+        $userGameRole = GameUserRole::where('game_id', $game->id)
             ->where('user_id', $userId)
+            ->with('role')
             ->first();
 
+        // Get current user's role details
+        $currentUserRole = null;
+        if ($userGameRole && $userGameRole->role) {
+            $currentUserRole = [
+                'id' => $userGameRole->role->id,
+                'name' => $userGameRole->role->name,
+                'team' => $userGameRole->role->team,
+                'description' => $userGameRole->role->description,
+                'can_use_night_action' => $userGameRole->role->can_use_night_action
+            ];
+        }
+
+        // Get available actions for current user if game is in progress
+        $availableActions = [];
+        if ($game->status === 'in_progress' && $userGameRole && $userGameRole->role) {
+            $availableActions = $userGameRole->role->actionTypes()
+                ->where('is_day_action', $game->is_day)
+                ->get()
+                ->map(function ($actionType) {
+                    return [
+                        'id' => $actionType->id,
+                        'name' => $actionType->name,
+                        'description' => $actionType->description,
+                        'targetType' => $actionType->target_type,
+                        'usageLimit' => $actionType->usage_limit,
+                    ];
+                });
+        }
+
+        // Get all game user roles with their relationships
+        $gameUserRoles = GameUserRole::where('game_id', $game->id)
+            ->with(['user', 'role'])
+            ->get();
+
         // Prepare players with detailed information
-        $players = $game->users->map(function ($user) use ($game, $userId) {
-            $pivot = $user->pivot;
+        $players = $gameUserRoles->map(function ($gameUserRole) use ($game, $userId) {
             $role = null;
 
-            if ($pivot->role_id) {
-                $role = Role::find($pivot->role_id);
-                
+            if ($gameUserRole->role) {
                 // Determine role visibility:
                 // 1. If game is completed - show all roles
                 // 2. If current user - show their role
                 // 3. Otherwise - hide role
-                $shouldShowRole = $game->status === 'completed' || $user->id === $userId;
+                $shouldShowRole = $game->status === 'completed' || $gameUserRole->user_id === $userId;
                 
                 if (!$shouldShowRole) {
                     $role = [
@@ -518,62 +570,27 @@ class GameController extends BaseController
                     ];
                 } else {
                     $role = [
-                        'id' => $role->id,
-                        'name' => $role->name,
-                        'team' => $role->team,
-                        'description' => $role->description,
-                        'can_use_night_action' => $role->can_use_night_action
+                        'id' => $gameUserRole->role->id,
+                        'name' => $gameUserRole->role->name,
+                        'team' => $gameUserRole->role->team,
+                        'description' => $gameUserRole->role->description,
+                        'can_use_night_action' => $gameUserRole->role->can_use_night_action
                     ];
                 }
             }
 
             return [
-                'id' => $user->id,
-                'name' => $user->name,
+                'id' => $gameUserRole->user->id,
+                'name' => $gameUserRole->user->name,
                 'role' => $role,
-                'isGameMaster' => (bool) $pivot->is_game_master,
+                'isGameMaster' => (bool) $gameUserRole->is_game_master,
                 'status' => [
-                    'connection' => $pivot->connection_status,
-                    'user' => $pivot->user_status,
+                    'connection' => $gameUserRole->connection_status,
+                    'user' => $gameUserRole->user_status,
                 ],
-                'joinedAt' => $pivot->created_at,
+                'joinedAt' => $gameUserRole->created_at,
             ];
         });
-
-        // Get available actions for current user if game is in progress
-        $availableActions = [];
-        if ($game->status === 'in_progress' && $userGameRole && $userGameRole->role_id) {
-            $role = Role::find($userGameRole->role_id);
-            if ($role) {
-                $availableActions = $role->actionTypes()
-                    ->where('is_day_action', $game->is_day)
-                    ->get()
-                    ->map(function ($actionType) {
-                        return [
-                            'id' => $actionType->id,
-                            'name' => $actionType->name,
-                            'description' => $actionType->description,
-                            'targetType' => $actionType->target_type,
-                            'usageLimit' => $actionType->usage_limit,
-                        ];
-                    });
-            }
-        }
-
-        // Get current user's role details
-        $currentUserRole = null;
-        if ($userGameRole && $userGameRole->role_id) {
-            $role = Role::find($userGameRole->role_id);
-            if ($role) {
-                $currentUserRole = [
-                    'id' => $role->id,
-                    'name' => $role->name,
-                    'team' => $role->team,
-                    'description' => $role->description,
-                    'can_use_night_action' => $role->can_use_night_action
-                ];
-            }
-        }
 
         // Prepare response
         return response()->json([
@@ -585,10 +602,10 @@ class GameController extends BaseController
             'currentUser' => [
                 'id' => $userId,
                 'role' => $currentUserRole,
-                'isGameMaster' => $userGameRole ? (bool) $userGameRole->pivot->is_game_master : false,
+                'isGameMaster' => $userGameRole ? (bool) $userGameRole->is_game_master : false,
                 'status' => $userGameRole ? [
-                    'connection' => $userGameRole->pivot->connection_status,
-                    'user' => $userGameRole->pivot->user_status,
+                    'connection' => $userGameRole->connection_status,
+                    'user' => $userGameRole->user_status,
                 ] : null,
                 'availableActions' => $availableActions,
             ],
@@ -622,11 +639,12 @@ class GameController extends BaseController
         }
 
         // Get user's role
-        $userGameRole = $game->users()
+        $userGameRole = GameUserRole::where('game_id', $game->id)
             ->where('user_id', $userId)
+            ->with('role')
             ->first();
 
-        if (!$userGameRole || !$userGameRole->role_id) {
+        if (!$userGameRole || !$userGameRole->role) {
             return response()->json(['message' => 'User has no role in this game'], 403);
         }
 
@@ -635,12 +653,7 @@ class GameController extends BaseController
         $targets = $request->getTargets();
 
         // Verify user's role can perform this action
-        $role = Role::find($userGameRole->role_id);
-        if (!$role) {
-            return response()->json(['message' => 'Invalid role'], 500);
-        }
-
-        $canPerformAction = $role->actionTypes()
+        $canPerformAction = $userGameRole->role->actionTypes()
             ->where('id', $actionType->id)
             ->where('is_day_action', $game->is_day)
             ->exists();

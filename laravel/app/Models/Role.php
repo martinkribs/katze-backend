@@ -43,11 +43,19 @@ class Role extends Model
     }
 
     /**
-     * Get the players with this role.
+     * Get the game user roles for this role.
      */
-    public function users(): HasMany
+    public function gameUserRoles(): HasMany
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(GameUserRole::class);
+    }
+
+    /**
+     * Get the role action type relationships.
+     */
+    public function roleActionTypes(): HasMany
+    {
+        return $this->hasMany(RoleActionType::class);
     }
 
     /**
@@ -55,7 +63,17 @@ class Role extends Model
      */
     public function actionTypes(): BelongsToMany
     {
-        return $this->belongsToMany(ActionType::class, 'role_action_type')
+        return $this->belongsToMany(ActionType::class, 'role_action_types')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Get the users that have this role through game user roles.
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'game_user_roles')
+                    ->withPivot(['game_id', 'connection_status', 'user_status', 'is_game_master'])
                     ->withTimestamps();
     }
 }

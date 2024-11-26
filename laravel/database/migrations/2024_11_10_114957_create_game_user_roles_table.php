@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('game_user_role')) {
-            Schema::create('game_user_role', function (Blueprint $table) {
+        if (!Schema::hasTable('game_user_roles')) {
+            Schema::create('game_user_roles', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('game_id')->constrained('games')->onDelete('cascade');
                 $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
@@ -34,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('game_user_role');
+        Schema::dropIfExists('game_user_roles');
     }
 };

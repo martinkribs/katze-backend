@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Role;
 use App\Models\ActionType;
-use Illuminate\Support\Facades\DB;
+use App\Models\RoleActionType;
 
 class RoleActionTypeSeeder extends Seeder
 {
@@ -48,11 +48,9 @@ class RoleActionTypeSeeder extends Seeder
                 }
 
                 // Create the relationship if it doesn't exist
-                DB::table('role_action_type')->insertOrIgnore([
+                RoleActionType::firstOrCreate([
                     'role_id' => $roles[$roleKey]->id,
-                    'action_type_id' => $actionTypes[$actionTypeName]->id,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                    'action_type_id' => $actionTypes[$actionTypeName]->id
                 ]);
             }
         }

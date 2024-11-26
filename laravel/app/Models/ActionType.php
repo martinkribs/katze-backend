@@ -44,11 +44,19 @@ class ActionType extends Model
     }
 
     /**
+     * Get the role action type relationships.
+     */
+    public function roleActionTypes(): HasMany
+    {
+        return $this->hasMany(RoleActionType::class);
+    }
+
+    /**
      * Get the roles that can use this action type.
      */
     public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(Role::class, 'player_action_type')
-                    ->withPivot('role_name');
+        return $this->belongsToMany(Role::class, 'role_action_types')
+                    ->withTimestamps();
     }
 }
