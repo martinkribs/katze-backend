@@ -12,6 +12,7 @@ spec:
     - hosts:
         - katze.app
         - soketi.katze.app
+        - mail.katze.app
   rules:
     - host: "katze.app"
       http:
@@ -33,3 +34,13 @@ spec:
                 name: soketi
                 port:
                   number: 6001
+    - host: "mail.katze.app"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mailu-core
+                port:
+                  number: 80

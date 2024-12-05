@@ -13,9 +13,12 @@ spec:
       labels:
         app: mailu
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: mailu
-          image: mailu/main:latest
+          image: mailu/main:2024.06.24
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 443  # HTTPS
             - containerPort: 25   # SMTP
