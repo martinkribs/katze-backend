@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ingress
+  name: mailu
   namespace: katze-backend
   annotations:
     traefik.ingress.kubernetes.io/router.tls: "true"
@@ -10,26 +10,37 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - katze.app
-        - soketi.katze.app
+        - mail.katze.app
+        - autoconfig.katze.app
+        - autodiscover.katze.app
   rules:
-    - host: "katze.app"
+    - host: "mail.katze.app"
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: nginx
+                name: mailu-front
                 port:
                   number: 80
-    - host: "soketi.katze.app"
+    - host: "autoconfig.katze.app"
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: soketi
+                name: mailu-front
                 port:
-                  number: 6001
+                  number: 80
+    - host: "autodiscover.katze.app"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mailu-front
+                port:
+                  number: 80

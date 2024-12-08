@@ -9,6 +9,7 @@ This is the backend for the Katze application, built with Laravel and deployed o
 - kubectl (for K3s cluster management)
 - PHP 8.3
 - Composer
+- Helm (for Mailu deployment)
 
 ## Local Development Setup
 
@@ -154,9 +155,19 @@ php artisan test
     kubectl apply -f kubernetes/queue-deployment.yml
     ```
 
-    f. Apply Mailu deployment (not yet implemented):
+    f. Deploy Mailu using Helm:
     ```bash
-    kubectl apply -f kubernetes/mailu-deployment.yml
+    # Add the Mailu Helm repository
+    helm repo add mailu https://mailu.github.io/helm-charts/
+
+    # Update Helm repositories
+    helm repo update
+
+    # Review and modify the values file as needed
+    # The values file was generated using: helm show values mailu/mailu > kubernetes/mailu-values.yml
+    
+    # Install Mailu using the values file
+    helm install mailu mailu/mailu -n katze-backend -f kubernetes/mailu-values.yml
     ```
 
     g. Finally, apply ingress (after all services are running):
@@ -181,7 +192,7 @@ This application relies on several services:
 - Redis
 - Meilisearch
 - Soketi (for WebSockets)
-- Mailu (for Email)
+- Mailu (for Email, deployed via Helm)
 - Queue Worker (for background tasks)
 
 Ensure these services are properly configured in your local and production environments.
@@ -196,9 +207,16 @@ If you encounter any issues, please check the logs:
 - For K3s deployment: 
   - Application logs: `kubectl logs -n katze-backend <app-pod-name>`
   - Queue worker logs: `kubectl logs -n katze-backend <queue-worker-pod-name>`
+  - Mailu logs: `kubectl logs -n katze-backend -l app.kubernetes.io/name=mailu`
 
 ### Common Issues
 
 1. WebSocket events not working:
    - For local development: Make sure you have the queue worker running (`php artisan queue:work`)
    - For production: Check the queue worker pod logs (`kubectl logs -n katze-backend <queue-worker-pod-name>`)
+
+2. Mailu pod issues:
+   - Check if Helm release is installed: `helm list -n katze-backend`
+   - Check Mailu pod status: `kubectl get pods -n katze-backend -l app.kubernetes.io/name=mailu`
+   - View Mailu logs: `kubectl logs -n katze-backend -l app.kubernetes.io/name=mailu`
+   - If needed, upgrade or reinstall: `helm upgrade mailu mailu/mailu -n katze-backend -f kubernetes/mailu-values.yaml`
