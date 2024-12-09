@@ -19,6 +19,7 @@
         "laravel/tinker": "^2.10",
         "php-open-source-saver/jwt-auth": "^2.7",
         "pusher/pusher-php-server": "^7.2",
+        "resend/resend-php": "^0.14.0",
         "spatie/laravel-responsecache": "^7.4"
     },
     "require-dev": {
