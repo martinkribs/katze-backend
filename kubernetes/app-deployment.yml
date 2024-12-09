@@ -15,6 +15,17 @@ spec:
       labels:
         app: katze-backend
     spec:
+      securityContext:
+        fsGroup: 82
+      initContainers:
+        - name: init-storage-permission
+          image: busybox
+          command: ['sh', '-c', 'chmod -R 777 /var/www/laravel/storage && chown -R 82:82 /var/www/laravel/storage']
+          volumeMounts:
+            - name: app-pvc
+              mountPath: /var/www/laravel/storage
+          securityContext:
+            runAsUser: 0
       containers:
         - name: katze-backend
           image: ghcr.io/martinkribs/katze-backend:main
@@ -24,8 +35,8 @@ spec:
             - containerPort: 9000
               name: fpm
           securityContext:
-            runAsUser: 0
-            runAsGroup: 0
+            runAsUser: 82
+            runAsGroup: 82
           resources:
             limits:
               memory: "512Mi"
@@ -61,11 +72,11 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: REDIS_PASSWORD
-            - name: RESEND_API_KEY
+            - name: RESEND_KEY
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
-                  key: RESEND_API_KEY
+                  key: RESEND_KEY
             - name: MAIL_MAILER
               value: "resend"
             - name: MEILISEARCH_HOST
