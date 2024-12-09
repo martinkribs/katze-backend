@@ -59,22 +59,13 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: REDIS_PASSWORD
-            - name: MAIL_HOST
-              value: "mailu.katze.app"
-            - name: MAIL_PORT
-              value: "587"
-            - name: MAIL_USERNAME
+            - name: MAIL_MAILER
+              value: "resend"
+            - name: RESEND_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
-                  key: MAIL_USERNAME
-            - name: MAIL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: MAIL_PASSWORD
-            - name: MAIL_ENCRYPTION
-              value: "tls"
+                  key: RESEND_API_KEY
             - name: MEILISEARCH_HOST
               value: "http://meilisearch:7700"
             - name: MEILISEARCH_KEY
