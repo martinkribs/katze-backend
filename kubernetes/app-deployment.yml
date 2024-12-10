@@ -28,12 +28,24 @@ spec:
             runAsGroup: 0
           resources:
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "768Mi"
+              cpu: "1000m"
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "384Mi"
+              cpu: "500m"
           env:
+            - name: PHP_FPM_PM_MAX_CHILDREN
+              value: "20"
+            - name: PHP_FPM_PM_START_SERVERS
+              value: "5"
+            - name: PHP_FPM_PM_MIN_SPARE_SERVERS
+              value: "5"
+            - name: PHP_FPM_PM_MAX_SPARE_SERVERS
+              value: "10"
+            - name: PHP_FPM_MAX_EXECUTION_TIME
+              value: "300"
+            - name: PHP_FPM_MAX_INPUT_TIME
+              value: "300"
             - name: APP_ENV
               value: "production"
             - name: APP_DEBUG
