@@ -12,7 +12,7 @@ data:
 
     server {
       listen 80;
-      server_name katze.app;
+      server_name katze.app open.katze.app;
     
       root /var/www/laravel/public;
       index index.php;
@@ -30,6 +30,11 @@ data:
       
       location / {
         try_files $uri $uri/ /index.php?$query_string;
+      }
+
+      # Handle game-invite route for deep linking
+      location /game-invite {
+        rewrite ^/game-invite(.*)$ /index.php?$query_string last;
       }
       
       location ~ \.php$ {
