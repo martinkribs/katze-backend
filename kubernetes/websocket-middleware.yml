@@ -1,0 +1,10 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: enable-websocket
+  namespace: katze-backend
+spec:
+  headers:
+    customRequestHeaders:
+      Connection: "upgrade"
+      Upgrade: "websocket"
