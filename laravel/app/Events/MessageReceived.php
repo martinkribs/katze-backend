@@ -9,10 +9,11 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MessageReceived
+class MessageReceived implements ShouldQueue
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -45,8 +46,5 @@ class MessageReceived
         ]);
 
         $message->load('user:id,name');
-
-        // Broadcast the message to others
-        broadcast(new MessageSent($message))->toOthers();
     }
 }
