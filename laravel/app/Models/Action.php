@@ -11,7 +11,7 @@ class Action extends Model
     use HasFactory;
 
     protected $fillable = [
-        'round_id',
+        'game_id',
         'executing_player_id',
         'target_player_id',
         'action_type_id',

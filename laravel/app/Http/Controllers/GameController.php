@@ -749,7 +749,7 @@ class GameController extends BaseController
         try {
             // Create the action
             $action = Action::create([
-                'round_id' => $game->current_round_id,
+                'game_id' => $game->id,
                 'executing_player_id' => $userId,
                 'target_player_id' => $targets[0] ?? null, // For single target actions
                 'action_type_id' => $actionType->id,
