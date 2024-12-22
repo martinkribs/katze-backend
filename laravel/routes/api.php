@@ -77,6 +77,5 @@ Route::middleware(['api', 'verified'])->group(function () {
         Route::delete('/games/{game}', [GameController::class, 'delete']);
         Route::post('/games/{game}/actions', [GameController::class, 'performAction']);
         Route::get('/games/{game}/messages', [MessageController::class, 'index']);
-        Route::post('/games/{game}/messages', [MessageController::class, 'store']);
     });
 });
