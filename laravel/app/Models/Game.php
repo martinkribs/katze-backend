@@ -70,6 +70,30 @@ class Game extends Model
     }
 
     /**
+     * Get all messages for this game.
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class);
+    }
+
+    /**
+     * Get night chat messages for this game.
+     */
+    public function nightMessages(): HasMany
+    {
+        return $this->hasMany(Message::class)->where('is_night_chat', true);
+    }
+
+    /**
+     * Get day chat messages for this game.
+     */
+    public function dayMessages(): HasMany
+    {
+        return $this->hasMany(Message::class)->where('is_night_chat', false);
+    }
+
+    /**
      * Check if the game has ended and determine the winning team.
      */
     public function checkWinConditions(): bool

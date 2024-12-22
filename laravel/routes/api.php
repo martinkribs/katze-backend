@@ -5,6 +5,7 @@ use App\Http\Controllers\GameController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\TranslationController;
+use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -75,5 +76,7 @@ Route::middleware(['api', 'verified'])->group(function () {
         Route::post('/join-game/{token}', [GameController::class, 'joinViaToken']);
         Route::delete('/games/{game}', [GameController::class, 'delete']);
         Route::post('/games/{game}/actions', [GameController::class, 'performAction']);
+        Route::get('/games/{game}/messages', [MessageController::class, 'index']);
+        Route::post('/games/{game}/messages', [MessageController::class, 'store']);
     });
 });
