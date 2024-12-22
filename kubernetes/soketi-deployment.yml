@@ -31,6 +31,8 @@ spec:
               value: "1"
             - name: MODE
               value: "server"
+            - name: SOKETI_DEFAULT_APP_ENABLE_CLIENT_MESSAGES
+              value: "true"
             - name: SOKETI_PORT
               value: "6001"
             - name: SOKETI_DEFAULT_APP_ID
@@ -87,6 +89,8 @@ spec:
               value: "1"
             - name: MODE
               value: "worker"
+            - name: SOKETI_DEFAULT_APP_ENABLE_CLIENT_MESSAGES
+              value: "true"
             - name: SOKETI_PORT
               value: "9601"
             - name: SOKETI_DEFAULT_APP_ID
