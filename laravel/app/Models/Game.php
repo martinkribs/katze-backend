@@ -150,16 +150,68 @@ class Game extends Model
             'villager' => 0,
             'cat' => 0,
             'serial_killer' => 0,
-            'seer' => 0,
+            'amor' => 0,
+            'detective' => 0,
             'witch' => 0,
+            'hiv' => 0,
+            'doctor' => 0,
+            'mute' => 0,
+            'peter' => 0,
+            'pyro' => 0,
+            'slut' => 0,
+            'seer' => 0,
+            'traitor' => 0,
+            'guard' => 0,
+            'groupie' => 0,
+            'executioner' => 0,
+            'jester' => 0,
+            'king' => 0,
         ];
 
-        // Basic role distribution logic
-        $roles['cat'] = max(round($userCount * 0.2), 1); // Around 20% cats, at least 1
+        // Always assign one cat
+        $roles['cat'] = 1;
+        $remainingPlayers = $userCount - 1;
 
-        // Fill remaining slots with villagers
-        $totalAssignedRoles = array_sum($roles);
-        $roles['villager'] = max(0, $userCount - $totalAssignedRoles);
+        // If more than 6 players, add another cat
+        if ($userCount > 6) {
+            $roles['cat']++;
+            $remainingPlayers--;
+        }
+
+        // Prioritize special roles based on player count
+        $specialRoles = [
+            'seer',      // Essential for villager team
+            'witch',     // Powerful support role
+            'doctor',    // Protection role
+            'detective', // Investigation role
+            'guard',     // Protection role
+            'amor',      // Can create lovers
+            'slut',      // Special night action
+            'king',      // Special villager role
+        ];
+
+        foreach ($specialRoles as $role) {
+            if ($remainingPlayers > 0 && $userCount >= 4) { // Only assign special roles in games with 4+ players
+                $roles[$role] = 1;
+                $remainingPlayers--;
+            }
+        }
+
+        // Add neutral roles in larger games
+        if ($remainingPlayers > 0 && $userCount >= 7) {
+            $roles['serial_killer'] = 1;
+            $remainingPlayers--;
+        }
+
+        if ($remainingPlayers > 0 && $userCount >= 8) {
+            $roles['jester'] = 1;
+            $remainingPlayers--;
+        }
+
+        // Only use villagers if we've run out of special roles to assign
+        if ($remainingPlayers > 0) {
+            $roles['villager'] = $remainingPlayers;
+        }
 
         return $roles;
     }
@@ -241,7 +293,6 @@ class Game extends Model
 
         // Update game status
         $this->status = 'in_progress';
-        $this->started_at = now();
         $this->save();
 
         // Assign roles to users
@@ -266,13 +317,12 @@ class Game extends Model
         $allGameUserRoles = $this->gameUserRoles()->where('connection_status', 'joined')->get();
 
         // Get or create settings and get effective configuration
+        /** @var $settings GameSetting */
         $settings = $this->settings ?? GameSetting::create([
             'game_id' => $this->id,
             'use_default' => true,
             'role_configuration' => $this->getDefaultRoleConfiguration()
         ]);
-
-        $roleConfig = $settings->getEffectiveConfiguration();
 
         // Shuffle users to randomize role assignment
         $shuffledGameUserRoles = $allGameUserRoles->shuffle();
@@ -281,7 +331,7 @@ class Game extends Model
         $assignedRoles = [];
 
         // Assign roles based on configuration
-        foreach ($roleConfig as $roleId => $count) {
+        foreach ($settings['role_configuration'] as $roleId => $count) {
             for ($i = 0; $i < $count; $i++) {
                 if ($shuffledGameUserRoles->isEmpty()) break;
 

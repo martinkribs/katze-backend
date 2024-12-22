@@ -193,7 +193,7 @@ class GameController extends BaseController
             $userRole = GameUserRole::where('game_id', $game->id)
                 ->where('user_id', $userId)
                 ->first();
-            
+
             if (!$userRole) {
                 return response()->json(['message' => 'User is not in this game'], 404);
             }
@@ -224,7 +224,7 @@ class GameController extends BaseController
 
     /**
      * Get game settings.
-     * 
+     *
      * Returns the current game settings, including:
      * - use_default: whether to use default role configuration
      * - role_configuration: custom role configuration if not using default (as object)
@@ -277,7 +277,7 @@ class GameController extends BaseController
 
     /**
      * Update game settings.
-     * 
+     *
      * Allows updating:
      * - use_default: whether to use default role configuration
      * - role_configuration: custom role configuration (used when use_default is false)
@@ -320,7 +320,7 @@ class GameController extends BaseController
 
     /**
      * Start the game.
-     * 
+     *
      * Creates game settings with role configuration if they don't exist,
      * then starts the game using the effective configuration.
      *
@@ -331,14 +331,6 @@ class GameController extends BaseController
         try {
             /** @var JsonResponse */
             return DB::transaction(function () use ($game): JsonResponse {
-                // Create settings with default role configuration if they don't exist
-                if (!$game->settings) {
-                    GameSetting::create([
-                        'game_id' => $game->id,
-                        'use_default' => true,
-                        'role_configuration' => new \stdClass() // Empty object for Flutter
-                    ]);
-                }
 
                 // Attempt to start the game
                 $startResult = $game->start();
@@ -651,7 +643,7 @@ class GameController extends BaseController
                 // 2. If current user - show their role
                 // 3. Otherwise - hide role
                 $shouldShowRole = $game->status === 'completed' || $gameUserRole->user_id === $userId;
-                
+
                 if (!$shouldShowRole) {
                     $role = [
                         'id' => null,
@@ -714,7 +706,7 @@ class GameController extends BaseController
             'minPlayers' => $game->min_players,
         ]);
     }
-    
+
     /**
      * Perform an action in the game.
      */

@@ -23,8 +23,28 @@ class ResetPasswordRequest extends FormRequest
     {
         return [
             'email' => ['required', 'email', 'exists:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'regex:/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]/'
+            ],
             'reset_token' => ['required', 'string'], // This will be returned by verifyOtp
+        ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'password.min' => 'Password must be at least 8 characters',
+            'password.regex' => 'Password must contain at least one letter, one number, and one special character (@$!%*#?&)',
+            'password.confirmed' => 'Password confirmation does not match',
         ];
     }
 }
