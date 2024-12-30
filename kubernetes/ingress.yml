@@ -18,11 +18,18 @@ spec:
     - host: "katze.app"
       http:
         paths:
-          - path: /
+          - path: /api
             pathType: Prefix
             backend:
               service:
                 name: nginx
+                port:
+                  number: 80
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: download-page-service
                 port:
                   number: 80
     - host: "soketi.katze.app"

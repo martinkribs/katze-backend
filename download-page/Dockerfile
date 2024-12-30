@@ -4,6 +4,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+
+# Set environment variables for the build
+ENV VITE_API_URL=https://katze.app/api
+ENV VITE_WEBSOCKET_HOST=wss://soketi.katze.app
+
 RUN npm run build
 
 # Production stage

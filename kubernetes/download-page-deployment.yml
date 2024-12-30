@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: download-page
-        image: download-page:latest
+        image: ghcr.io/martinkribs/katze-frontend:main
         ports:
         - containerPort: 80
         volumeMounts:
@@ -49,22 +49,3 @@ spec:
   resources:
     requests:
       storage: 1Gi
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: download-page-ingress
-  annotations:
-    kubernetes.io/ingress.class: traefik
-spec:
-  rules:
-  - host: download.katze-app.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: download-page-service
-            port:
-              number: 80
