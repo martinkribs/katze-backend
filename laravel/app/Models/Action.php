@@ -10,6 +10,32 @@ class Action extends Model
 {
     use HasFactory;
 
+    /**
+     * Check if a player can perform an action type based on limits and game phase
+     */
+    public static function canPerformAction(User $player, ActionType $actionType, Game $game): bool 
+    {
+        // Check if action is allowed during current game phase
+        if (!$actionType->isAllowedInPhase($game->phase)) {
+            return false;
+        }
+
+        // If no usage limit, action can be performed
+        if ($actionType->usage_limit === 0) {
+            return true;
+        }
+
+        // Count how many times this action has been used by the player in the current day/night
+        $startOfDay = now()->startOfDay();
+        $actionCount = self::where('executing_player_id', $player->id)
+            ->where('game_id', $game->id)
+            ->where('action_type_id', $actionType->id)
+            ->where('created_at', '>=', $startOfDay)
+            ->count();
+
+        return $actionCount < $actionType->usage_limit;
+    }
+
     protected $fillable = [
         'game_id',
         'executing_player_id',

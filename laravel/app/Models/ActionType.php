@@ -18,14 +18,22 @@ class ActionType extends Model
         'usage_limit',
         'result_type_id',
         'target_type',
-        'is_day_action'
+        'allowed_phases'
     ];
 
     protected $casts = [
         'usage_limit' => 'integer',
         'target_type' => 'string',
-        'is_day_action' => 'boolean'
+        'allowed_phases' => 'array'
     ];
+
+    /**
+     * Check if this action type can be used in the given phase
+     */
+    public function isAllowedInPhase(string $phase): bool
+    {
+        return in_array($phase, $this->allowed_phases);
+    }
 
     /**
      * Get the result type that represents this action's result.

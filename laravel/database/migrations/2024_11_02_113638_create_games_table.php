@@ -20,7 +20,8 @@ return new class extends Migration
                 $table->text('description')->nullable();
                 $table->integer('min_players');
                 $table->boolean('is_private')->default(false);
-                $table->boolean('is_day');
+                $table->enum('phase', ['preparation', 'day', 'night', 'voting'])->default('preparation');
+                $table->boolean('is_voting_phase')->default(false);
                 $table->string('join_code')->nullable()->unique();
                 $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])->default('pending');
                 $table->enum('winning_team', ['villagers', 'cats', 'serial_killer', 'lovers'])->nullable();

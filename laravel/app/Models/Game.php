@@ -28,7 +28,8 @@ class Game extends Model
         'description',
         'min_players',
         'is_private',
-        'is_day',
+        'phase',
+        'is_voting_phase',
         'join_code',
         'status',
         'winning_team'
@@ -36,8 +37,41 @@ class Game extends Model
 
     protected $casts = [
         'is_private' => 'boolean',
-        'is_day' => 'boolean',
+        'is_voting_phase' => 'boolean',
+        'phase' => 'string'
     ];
+
+    /**
+     * Check if the game is in day phase
+     */
+    public function isDay(): bool
+    {
+        return $this->phase === 'day';
+    }
+
+    /**
+     * Check if the game is in night phase
+     */
+    public function isNight(): bool
+    {
+        return $this->phase === 'night';
+    }
+
+    /**
+     * Check if the game is in preparation phase
+     */
+    public function isPreparation(): bool
+    {
+        return $this->phase === 'preparation';
+    }
+
+    /**
+     * Check if the game is in voting phase
+     */
+    public function isVoting(): bool
+    {
+        return $this->phase === 'voting';
+    }
 
     protected $attributes = [
         'min_players' => 3,

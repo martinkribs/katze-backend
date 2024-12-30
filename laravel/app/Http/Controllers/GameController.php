@@ -746,6 +746,11 @@ class GameController extends BaseController
             return response()->json(['message' => 'Action not available for this role'], 403);
         }
 
+        // Check if action can be performed based on limits
+        if (!Action::canPerformAction($userGameRole->user, $actionType, $game)) {
+            return response()->json(['message' => 'Action limit reached or not available during current day/night cycle'], 403);
+        }
+
         try {
             // Create the action
             $action = Action::create([

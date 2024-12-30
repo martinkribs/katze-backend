@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Role;
+use App\Models\Game;
+use App\Models\Action;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controller as BaseController;
 
 class RoleController extends BaseController
@@ -66,7 +69,28 @@ class RoleController extends BaseController
      */
     public function getActionTypes(Role $role): JsonResponse
     {
-        $actionTypes = $role->actionTypes->map(function ($actionType) {
+        $userId = Auth::id();
+        if ($userId === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Get user's active game
+        $game = Game::whereHas('users', function ($query) use ($userId) {
+            $query->where('user_id', $userId);
+        })->where('status', 'in_progress')->first();
+
+        $actionTypes = $role->actionTypes->map(function ($actionType) use ($userId, $game) {
+            // Count actions used today for this action type
+            $actionsUsedToday = 0;
+            if ($game) {
+                $startOfDay = now()->startOfDay();
+                $actionsUsedToday = Action::where('executing_player_id', $userId)
+                    ->where('game_id', $game->id)
+                    ->where('action_type_id', $actionType->id)
+                    ->where('created_at', '>=', $startOfDay)
+                    ->count();
+            }
+
             return [
                 'id' => $actionType->id,
                 'name' => $actionType->name,
@@ -74,6 +98,8 @@ class RoleController extends BaseController
                 'usage_limit' => $actionType->usage_limit,
                 'target_type' => $actionType->target_type,
                 'is_day_action' => $actionType->is_day_action,
+                'actions_used' => $actionsUsedToday,
+                'can_use' => $game ? ($actionType->usage_limit === null || $actionsUsedToday < $actionType->usage_limit) && $actionType->is_day_action === $game->is_day : false
             ];
         });
 

@@ -24,7 +24,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 1, // Once per day
                 'result_type_id' => $resultTypes['death']->id,
                 'target_type' => 'single',
-                'is_day_action' => false // Cats kill at night
+                'allowed_phases' => json_encode(['night'])
             ],
 
             // Amor actions
@@ -34,7 +34,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 1, // Once at game start
                 'result_type_id' => $resultTypes['love_linked']->id,
                 'target_type' => 'multiple',
-                'is_day_action' => false // Before game starts
+                'allowed_phases' => json_encode(['preparation'])
             ],
             [
                 'name' => 'force_vote',
@@ -42,7 +42,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null, // Once before each vote
                 'result_type_id' => $resultTypes['vote_manipulation']->id,
                 'target_type' => 'multiple',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['voting'])
             ],
 
             // Witch actions
@@ -52,7 +52,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 1,
                 'result_type_id' => $resultTypes['death']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
             [
                 'name' => 'life_potion',
@@ -60,7 +60,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 1,
                 'result_type_id' => $resultTypes['healing']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['voting'])
             ],
             [
                 'name' => 'healing_potion',
@@ -68,7 +68,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 1,
                 'result_type_id' => $resultTypes['healing']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
 
             // Detective actions
@@ -78,7 +78,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null, // After each vote
                 'result_type_id' => $resultTypes['team_reveal']->id,
                 'target_type' => 'multiple',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
             [
                 'name' => 'force_information',
@@ -86,7 +86,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null, // Before each vote
                 'result_type_id' => $resultTypes['role_reveal']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['voting'])
             ],
 
             // Groupie actions
@@ -96,7 +96,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 1,
                 'result_type_id' => $resultTypes['conversion']->id,
                 'target_type' => 'single',
-                'is_day_action' => false // At start
+                'allowed_phases' => json_encode(['preparation'])
             ],
             [
                 'name' => 'groupie_kill',
@@ -104,7 +104,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null, // Based on chosen evil path
                 'result_type_id' => $resultTypes['death']->id,
                 'target_type' => 'single',
-                'is_day_action' => false
+                'allowed_phases' => json_encode(['night'])
             ],
 
             // Henker actions
@@ -114,7 +114,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null,
                 'result_type_id' => $resultTypes['role_reveal']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['voting'])
             ],
 
             // Mute actions
@@ -124,7 +124,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null, // After each vote
                 'result_type_id' => $resultTypes['muted']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
 
             // Oracle actions
@@ -134,7 +134,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null,
                 'result_type_id' => $resultTypes['role_reveal']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
             [
                 'name' => 'choose_next_oracle',
@@ -142,7 +142,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 1,
                 'result_type_id' => $resultTypes['conversion']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
 
             // Peter actions
@@ -152,7 +152,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 1,
                 'result_type_id' => $resultTypes['role_stolen']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
 
             // Pyromane actions
@@ -162,7 +162,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null, // After Sunday votes
                 'result_type_id' => $resultTypes['gasoline_covered']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
             [
                 'name' => 'ignite',
@@ -170,7 +170,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 1,
                 'result_type_id' => $resultTypes['death']->id,
                 'target_type' => 'multiple',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
             [
                 'name' => 'check_gasoline',
@@ -178,7 +178,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null, // After Sunday votes (as warning system)
                 'result_type_id' => $resultTypes['role_reveal']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
 
             // Schlampe actions
@@ -188,7 +188,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null, // After each vote, max 2x per player
                 'result_type_id' => $resultTypes['sleeping_with']->id,
                 'target_type' => 'single',
-                'is_day_action' => false
+                'allowed_phases' => json_encode(['night'])
             ],
             [
                 'name' => 'inherit_ability',
@@ -196,7 +196,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null,
                 'result_type_id' => $resultTypes['ability_inherited']->id,
                 'target_type' => 'self',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
 
             // Seher actions
@@ -206,7 +206,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null, // After each vote
                 'result_type_id' => $resultTypes['role_reveal']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
 
             // Serienkiller actions
@@ -216,7 +216,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 2, // Per week
                 'result_type_id' => $resultTypes['death']->id,
                 'target_type' => 'single',
-                'is_day_action' => false
+                'allowed_phases' => json_encode(['night'])
             ],
 
             // Zivi actions
@@ -226,7 +226,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => 1,
                 'result_type_id' => $resultTypes['death']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
             [
                 'name' => 'protect_player',
@@ -234,7 +234,7 @@ class ActionTypeSeeder extends Seeder
                 'usage_limit' => null, // After each vote
                 'result_type_id' => $resultTypes['protection']->id,
                 'target_type' => 'single',
-                'is_day_action' => true
+                'allowed_phases' => json_encode(['day'])
             ],
         ];
 
