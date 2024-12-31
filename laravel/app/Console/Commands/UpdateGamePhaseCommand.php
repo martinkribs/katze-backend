@@ -7,7 +7,7 @@ use App\Models\Game;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
-class UpdateGameDayNightCommand extends Command
+class UpdateGamePhaseCommand extends Command
 {
     protected $signature = 'game:update-phase';
     protected $description = 'Updates game phases based on time and conditions';
