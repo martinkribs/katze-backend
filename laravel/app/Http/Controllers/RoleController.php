@@ -34,7 +34,7 @@ class RoleController extends BaseController
                             'description' => $actionType->description,
                             'usage_limit' => $actionType->usage_limit,
                             'target_type' => $actionType->target_type,
-                            'is_day_action' => $actionType->is_day_action,
+                            'allowed_phases' => $actionType->allowed_phases,
                         ];
                     }),
                 ];
@@ -97,9 +97,9 @@ class RoleController extends BaseController
                 'description' => $actionType->description,
                 'usage_limit' => $actionType->usage_limit,
                 'target_type' => $actionType->target_type,
-                'is_day_action' => $actionType->is_day_action,
+                'allowed_phases' => $actionType->allowed_phases,
                 'actions_used' => $actionsUsedToday,
-                'can_use' => $game ? ($actionType->usage_limit === null || $actionsUsedToday < $actionType->usage_limit) && $actionType->is_day_action === $game->is_day : false
+                'can_use' => $game ? ($actionType->usage_limit === null || $actionsUsedToday < $actionType->usage_limit) && $actionType->isAllowedInPhase($game->phase) : false
             ];
         });
 
