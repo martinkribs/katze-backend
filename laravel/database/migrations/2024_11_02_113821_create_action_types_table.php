@@ -19,7 +19,7 @@ return new class extends Migration
                 $table->integer('usage_limit')->nullable();
                 $table->foreignId('result_type_id')->constrained('result_types');
                 $table->enum('target_type', ['single', 'multiple', 'self', 'none']);
-                $table->json('allowed_phases')->default('["day"]');
+                $table->json('allowed_phases');
                 $table->timestamps();
             });
         }
