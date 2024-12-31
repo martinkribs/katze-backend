@@ -53,7 +53,7 @@ class GameController extends BaseController
                     'name' => $gameData['name'],
                     'description' => $gameData['description'],
                     'is_private' => $gameData['is_private'],
-                    'is_day' => true,
+                    'phase' => 'preparation',
                     'join_code' => $gameData['is_private'] ? Game::generateJoinCode() : null,
                     'timezone' => $gameData['timezone'],
                     'status' => 'pending',
@@ -615,7 +615,7 @@ class GameController extends BaseController
         $availableActions = [];
         if ($game->status === 'in_progress' && $userGameRole && $userGameRole->role) {
             $availableActions = $userGameRole->role->actionTypes()
-                ->where('is_day_action', $game->is_day)
+                ->whereJsonContains('allowed_phases', $game->phase)
                 ->get()
                 ->map(function ($actionType) {
                     return [
@@ -624,6 +624,7 @@ class GameController extends BaseController
                         'description' => $actionType->description,
                         'targetType' => $actionType->target_type,
                         'usageLimit' => $actionType->usage_limit,
+                        'allowedPhases' => $actionType->allowed_phases,
                     ];
                 });
         }
@@ -694,7 +695,7 @@ class GameController extends BaseController
                 'availableActions' => $availableActions,
             ],
             'gameDetails' => [
-                'isDay' => $game->is_day,
+                'phase' => $game->phase,
                 'timezone' => $game->timezone,
                 'createdAt' => $game->created_at,
                 'startedAt' => $game->started_at,
@@ -739,7 +740,7 @@ class GameController extends BaseController
         // Verify user's role can perform this action
         $canPerformAction = $userGameRole->role->actionTypes()
             ->where('action_types.id', $actionType->id)  // Specify the table name
-            ->where('is_day_action', $game->is_day)
+            ->whereJsonContains('allowed_phases', $game->phase)
             ->exists();
 
         if (!$canPerformAction) {
