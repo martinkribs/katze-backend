@@ -9,8 +9,8 @@ class Kernel extends ConsoleKernel
 {
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('game:update-day-night')
-                ->everyThirtyMinutes();
+        $schedule->command('game:update-phase')
+                ->everyMinute();
     }
 
     protected function commands(): void

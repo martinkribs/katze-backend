@@ -73,6 +73,64 @@ class Game extends Model
         return $this->phase === 'voting';
     }
 
+    /**
+     * Check if all players with preparation phase actions have used them
+     */
+    public function canExitPreparationPhase(): bool
+    {
+        if (!$this->isPreparation()) {
+            return false;
+        }
+
+        // Get all players with roles that have preparation phase actions
+        $playersWithPrepActions = $this->gameUserRoles()
+            ->with(['role.actionTypes' => function ($query) {
+                $query->whereJsonContains('allowed_phases', 'preparation');
+            }])
+            ->get()
+            ->filter(function ($gameUserRole) {
+                return $gameUserRole->role && $gameUserRole->role->actionTypes->isNotEmpty();
+            });
+
+        // If no players have preparation actions, we can exit
+        if ($playersWithPrepActions->isEmpty()) {
+            return true;
+        }
+
+        // Check if all these players have performed their actions
+        foreach ($playersWithPrepActions as $gameUserRole) {
+            $actionCount = Action::where('game_id', $this->id)
+                ->where('executing_player_id', $gameUserRole->user_id)
+                ->whereHas('actionType', function ($query) {
+                    $query->whereJsonContains('allowed_phases', 'preparation');
+                })
+                ->count();
+
+            if ($actionCount === 0) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if it's time for voting (Wednesday or Sunday during day phase)
+     */
+    public function shouldStartVoting(): bool
+    {
+        if (!$this->isDay()) {
+            return false;
+        }
+
+        $timezone = new \DateTimeZone($this->timezone);
+        $now = new \DateTime('now', $timezone);
+        $dayOfWeek = (int)$now->format('N'); // 1 (Monday) to 7 (Sunday)
+
+        // Check if it's Wednesday (3) or Sunday (7)
+        return $dayOfWeek === 3 || $dayOfWeek === 7;
+    }
+
     protected $attributes = [
         'min_players' => 3,
     ];
@@ -226,47 +284,39 @@ class Game extends Model
             'king' => 0,
         ];
 
-        // Always assign one cat
-        $roles['cat'] = 1;
-        $remainingPlayers = $userCount - 1;
-
-        // If more than 6 players, add another cat
-        if ($userCount > 6) {
-            $roles['cat']++;
-            $remainingPlayers--;
-        }
-
-        // Prioritize special roles based on player count
+        // Assign cats based on player count (1 cat per 6 players, rounding up)
+        $numCats = (int) ceil($userCount / 6);
+        $roles['cat'] = $numCats;
+        $remainingPlayers = $userCount - $numCats;
+        
+        // Prioritize special roles even in small games
         $specialRoles = [
             'seer',      // Essential for villager team
             'witch',     // Powerful support role
             'doctor',    // Protection role
             'detective', // Investigation role
-            'guard',     // Protection role
+            'serial_killer', // Neutral role
+            'jester',    // Neutral role
             'amor',      // Can create lovers
             'slut',      // Special night action
             'king',      // Special villager role
+            'guard',     // Protection role
         ];
 
+        // Assign special roles based on remaining players
         foreach ($specialRoles as $role) {
-            if ($remainingPlayers > 0 && $userCount >= 4) { // Only assign special roles in games with 4+ players
+            if ($remainingPlayers > 0) {
                 $roles[$role] = 1;
                 $remainingPlayers--;
+                
+                // Break if we've assigned all remaining players
+                if ($remainingPlayers <= 0) {
+                    break;
+                }
             }
         }
 
-        // Add neutral roles in larger games
-        if ($remainingPlayers > 0 && $userCount >= 7) {
-            $roles['serial_killer'] = 1;
-            $remainingPlayers--;
-        }
-
-        if ($remainingPlayers > 0 && $userCount >= 8) {
-            $roles['jester'] = 1;
-            $remainingPlayers--;
-        }
-
-        // Only use villagers if we've run out of special roles to assign
+        // If we still have remaining players, add them as villagers
         if ($remainingPlayers > 0) {
             $roles['villager'] = $remainingPlayers;
         }

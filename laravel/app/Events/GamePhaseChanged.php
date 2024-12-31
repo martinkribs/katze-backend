@@ -2,38 +2,39 @@
 
 namespace App\Events;
 
-use App\Models\Game;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class GameDayNightChanged implements ShouldBroadcast
+class GamePhaseChanged implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
         public int $gameId,
-        public bool $isDay
+        public string $phase
     ) {}
 
+    /**
+     * Get the channels the event should broadcast on.
+     */
     public function broadcastOn(): array
     {
         return [
-            new Channel('game.' . $this->gameId),
+            new Channel("game.{$this->gameId}")
         ];
     }
 
-    public function broadcastAs(): string
-    {
-        return 'game.daynight.changed';
-    }
-
+    /**
+     * Get the data to broadcast.
+     */
     public function broadcastWith(): array
     {
         return [
-            'is_day' => $this->isDay
+            'game_id' => $this->gameId,
+            'phase' => $this->phase
         ];
     }
 }
