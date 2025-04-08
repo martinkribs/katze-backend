@@ -14,6 +14,8 @@ spec:
         - katze.app
         - soketi.katze.app
         - open.katze.app
+        - meet.katze.app
+        - xmpp.meet.katze.app
   rules:
     - host: "katze.app"
       http:
@@ -30,6 +32,16 @@ spec:
             backend:
               service:
                 name: download-page-service
+                port:
+                  number: 80
+    - host: "meet.katze.app"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jitsi-web
                 port:
                   number: 80
     - host: "soketi.katze.app"
@@ -52,3 +64,13 @@ spec:
                 name: nginx
                 port:
                   number: 80
+    - host: "xmpp.meet.katze.app"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jitsi-prosody
+                port:
+                  number: 5269
