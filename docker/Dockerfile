@@ -1,22 +1,28 @@
-# Use PHP 8.3 FPM image as the base image
+# php:8.3-fpm base — we don't actually run php-fpm (see startup_script.sh, which runs
+# `php artisan serve` instead), but this image bundles the standalone `php` CLI too and
+# is already verified working, so kept as-is rather than switching to php:8.3-cli.
 FROM php:8.3-fpm
 
 # Set the working directory in the container
 WORKDIR /var/www/laravel
 
 # Install production dependencies
+# openssh-server: this container is a katze-platform `service` — direct SSH access via the
+# SSH Bastion is part of the model (see dev-infra docs/adr/0001-workspace-service-split.md).
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     libsodium-dev \
     libsodium23 \
     libonig-dev \
+    libpq-dev \
+    openssh-server \
     zip
 
 # Install php extensions
 RUN docker-php-ext-install -j$(nproc) \
         zip \
         pdo \
-        pdo_mysql \
+        pdo_pgsql \
         sodium \
         mbstring
 
@@ -55,14 +61,14 @@ RUN rm -rf /usr/local/bin/composer \
     && rm -rf /var/www/laravel/.git \
     && rm -rf /var/www/laravel/tests
 
-# Configure PHP-FPM for production
-RUN echo "pm.max_children = 50" >> /usr/local/etc/php-fpm.d/www.conf \
-    && echo "pm.start_servers = 5" >> /usr/local/etc/php-fpm.d/www.conf \
-    && echo "pm.min_spare_servers = 5" >> /usr/local/etc/php-fpm.d/www.conf \
-    && echo "pm.max_spare_servers = 35" >> /usr/local/etc/php-fpm.d/www.conf
+# SSH setup — host keys generated at build time, sshd runs in the foreground alongside
+# the app (see startup_script.sh). Client key trust comes from the SSH Bastion's sync
+# sidecar; the exact bastion<->upstream trust chain is still unverified, see
+# dev-infra docs/adr/0002-ssh-bastion.md.
+RUN mkdir -p /var/run/sshd && ssh-keygen -A
 
-# Expose port 9000
-EXPOSE 9000
+# Expose the dev server (php artisan serve) and SSH
+EXPOSE 8000 22
 
 # Copy startup script into the image and make it executable
 COPY docker/startup_script.sh /usr/local/bin/start.sh

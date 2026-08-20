@@ -11,7 +11,11 @@ log() {
 # Navigate to the Laravel project directory
 cd /var/www/laravel
 
-log "Starting Laravel application in production mode"
+log "Starting Laravel application (katze-platform dev service)"
+
+# SSH access via the SSH Bastion (see dev-infra docs/adr/0002-ssh-bastion.md)
+log "Starting sshd"
+/usr/sbin/sshd
 
 # Check if application key exists and is not empty
 if grep -q "APP_KEY=" .env && grep -q "APP_KEY=base64:" .env; then
@@ -39,10 +43,5 @@ php artisan route:clear
 php artisan migrate --force
 php artisan db:seed --force
 
-# Cache for production
-log "Building production cache"
-php artisan config:cache
-php artisan route:cache
-
-log "Starting PHP-FPM"
-exec php-fpm
+log "Starting dev server on :8000"
+exec php artisan serve --host=0.0.0.0 --port=8000

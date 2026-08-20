@@ -1,20 +1,19 @@
 services:
 
-  # MySQL Service
-  mysql:
-    image: mysql:8
-    container_name: mysql
+  # PostgreSQL Service
+  postgres:
+    image: postgres:18-alpine
+    container_name: postgres
     restart: unless-stopped
     tty: true
     ports:
-      - "3306:3306"
+      - "5432:5432"
     environment:
-      MYSQL_DATABASE: katze
-      MYSQL_ROOT_PASSWORD: root
-      SERVICE_TAGS: dev
-      SERVICE_NAME: mysql
+      POSTGRES_DB: katze
+      POSTGRES_USER: katze
+      POSTGRES_PASSWORD: katze
     volumes:
-      - vol_mysql:/var/lib/mysql
+      - vol_postgres:/var/lib/postgresql
     networks:
       - app-network
 
@@ -74,7 +73,7 @@ services:
       - app-network
 
 volumes:
-  vol_mysql:
+  vol_postgres:
     driver: local
   vol_redis:
     driver: local
