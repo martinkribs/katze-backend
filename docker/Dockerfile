@@ -61,6 +61,13 @@ RUN rm -rf /usr/local/bin/composer \
     && rm -rf /var/www/laravel/.git \
     && rm -rf /var/www/laravel/tests
 
+# /var/www/laravel becomes a PVC-backed live-edit path at runtime (see dev-infra
+# ADR-0001 / devspaces/*/api-deployment.yaml, mountPath /var/www/laravel) — the PVC starts
+# empty, so the built app is relocated to this immutable reference copy, and
+# startup_script.sh seeds /var/www/laravel from it on first boot only (subsequent boots
+# and dev edits persist across restarts since the PVC is never re-seeded once non-empty).
+RUN mv /var/www/laravel /opt/app-src
+
 # SSH setup — host keys generated at build time, sshd runs in the foreground alongside
 # the app (see startup_script.sh). Client key trust comes from the SSH Bastion's sync
 # sidecar; the exact bastion<->upstream trust chain is still unverified, see

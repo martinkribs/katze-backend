@@ -8,6 +8,15 @@ log() {
     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
 }
 
+# /var/www/laravel is a PVC-backed, live-edit path at runtime (see dev-infra ADR-0001) and
+# starts empty on a fresh volume — seed it from the image's reference copy on first boot
+# only. Once seeded, dev edits and pod restarts leave it alone.
+if [ ! -f /var/www/laravel/artisan ]; then
+    log "Seeding /var/www/laravel from image (first boot on this volume)"
+    cp -a /opt/app-src/. /var/www/laravel/
+    chown -R www-data:www-data /var/www/laravel
+fi
+
 # Navigate to the Laravel project directory
 cd /var/www/laravel
 
